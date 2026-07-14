@@ -27,8 +27,6 @@ The selected subset of the OWID CO₂ dataset is filtered temporally to cover th
 * **`oil_co2_per_capita`**: Oil emissions per person, offering a normalized view of transport-related fuel transition progress.
 * **`coal_co2`**: Annual $CO_2$ emissions from coal. Represents the most carbon-intensive grid electricity source, helping to detect if EVs shift pollution to coal power.
 * **`coal_co2_per_capita`**: Coal emissions per person, allowing normalized comparison of coal-dependence across countries.
-* **`gas_co2`**: Annual $CO_2$ emissions from natural gas. Used to analyze transition electricity generation and heating emissions.
-* **`gas_co2_per_capita`**: Gas emissions per person, for normalized gas-dependence analysis.
 * **`co2_per_unit_energy`**: Carbon intensity of the primary energy mix (grams of $CO_2$ per kilowatt-hour). Evaluates whether the overall energy infrastructure is becoming cleaner.
 * **`primary_energy_consumption`**: Total primary energy consumption (in terawatt-hours). Used to measure total energy demand and contextualize electricity grid expansion.
 
@@ -41,22 +39,17 @@ The selected subset of the OWID CO₂ dataset is filtered temporally to cover th
 
 ## Dataset 2: Our World in Data (OWID) Energy Dataset
 
-The selected subset of the OWID Energy dataset is filtered temporally to cover the period **2010–2024** to match the EV sales dataset. It focuses heavily on the electricity mix and grid cleanliness. Below are the selected attributes, grouped by their analytical purpose:
+The selected subset of the OWID Energy dataset is filtered temporally to cover the period **2010–2024** to match the EV sales dataset. It focuses heavily on the electricity mix and grid cleanliness. 
 
-### 1. Identifiers & Context
-* **`country`**: The name of the geographic region or country. Primary join key.
-* **`year`**: The observation year, filtered from **2010 to 2024**.
-* **`iso_code`**: Standardized ISO 3166-1 alpha-3 code.
-* **`population`**: Country population.
-* **`gdp`**: Gross Domestic Product (adjusted for inflation/PPP).
+*(Note: 'country', 'year', 'iso_code', 'population', 'gdp', and 'primary_energy_consumption' are dropped from this dataset in the final integrated output to avoid redundancy, as they are already provided by Dataset 1).*
 
-### 2. General Electricity Grid & Energy Metrics
+Below are the selected attributes, grouped by their analytical purpose:
+
+### 1. General Electricity Grid & Energy Metrics
 * **`electricity_generation`**: Total electricity generated domestically (in terawatt-hours). Tracks the overall size of the domestic power grid.
-* **`electricity_demand`**: Total electricity demand (in terawatt-hours). Used to evaluate if grid capacity and generation are growing sufficiently to meet the additional loads from EV adoption.
-* **`carbon_intensity_elec`**: Lifecycle carbon intensity of electricity generation (grams of $CO_2$ equivalents per kilowatt-hour). The most important KPI to measure whether the electricity powering EVs is actually clean.
-* **`primary_energy_consumption`**: Primary energy consumption (in terawatt-hours). Helps contextualize electricity demand within the country's total primary energy footprint.
+* **`electricity_demand_tot`**: Total electricity demand (in terawatt-hours, renamed from `electricity_demand` in the ETL process). Used to evaluate if grid capacity and generation are growing sufficiently to meet the additional loads from EV adoption.
 
-### 3. Clean vs. Fossil Electricity Breakdown (Mix of Generation)
+### 2. Clean vs. Fossil Electricity Breakdown (Mix of Generation)
 * **`low_carbon_electricity`**: Electricity generated from low-carbon sources (nuclear and renewables combined) in terawatt-hours. Represents the total clean energy footprint of the grid.
 * **`fossil_electricity`**: Electricity generated from fossil fuel sources (coal, oil, gas) in terawatt-hours.
 * **`renewables_electricity`**: Electricity generated from renewable sources (wind, solar, hydro, biomass, etc.) in terawatt-hours.
@@ -69,7 +62,7 @@ The selected subset of the OWID Energy dataset is filtered temporally to cover t
 * **`wind_electricity`**: Electricity generated from wind power (in terawatt-hours). Highlights wind energy transition.
 * **`other_renewable_electricity`**: Electricity generated from other renewable sources (geothermal, biomass, waste-to-energy, etc.) in terawatt-hours. Crucial as a catch-all category to ensure the total renewable generation adds up perfectly.
 
-### 4. Trade / Grid Interconnection
+### 3. Trade / Grid Interconnection
 * **`net_elec_imports`**: Net electricity imports (imports minus exports) in terawatt-hours. Crucial for assessing if a country is importing clean or dirty power from its neighbors, which affects the true carbon footprint of EV charging.
 
 ---
@@ -78,15 +71,20 @@ The selected subset of the OWID Energy dataset is filtered temporally to cover t
 
 This dataset, sourced from the International Energy Agency (IEA), tracks annual electric vehicle sales, fleet stocks, charging infrastructure, and related energy and displacement metrics.
 
-Unlike the OWID datasets, which are in "wide" format, this dataset is structured in a **"long" (key-value) format** with a generic parameter column. For the Data Warehouse design, it is recommended to **pivot these parameters into distinct fact columns (measures)** during the ETL process.
+Unlike the OWID datasets, which are in "wide" format, this dataset is structured in a **"long" (key-value) format** in the raw files. In the ETL process, it is **pivoted** to transform the `parameter` column values into distinct fact columns (measures).
 
 ### 1. Identifiers & Context (Dimensions)
-* **`region`**: The country or geographic territory. Maps directly to `country` in the OWID datasets.
-* **`year`**: The observation year, spanning from **2010 to 2024**.
-* **`category`**: Distinguishes between historical records (`Historical`) and future policy scenarios (`Projection-STEPS`, `Projection-APS`).
-* **`mode`**: Vehicle segment (e.g., `Cars`, `Buses`, `Vans`, `Trucks`). Allows analyzing which sectors are transitioning fastest.
-* **`powertrain`**: Vehicle powertrain technology (`BEV` for battery electric, `PHEV` for plug-in hybrid, `FCEV` for hydrogen fuel cell) or charger speeds (`Publicly available fast`/`slow` for infrastructure).
+* **`country`**: The name of the country (renamed from `region` in the ETL process). Used as a primary join key.
+* **`year`**: The observation year, filtered from **2010 to 2024**.
+* **`mode`**: Vehicle segment (e.g., `Cars`, `Buses`, `Vans`, `Trucks`). Allows analyzing which road transport sectors are transitioning fastest.
+* **`powertrain`**: Vehicle powertrain technology (`BEV` for battery electric, `PHEV` for plug-in hybrid, `FCEV` for hydrogen fuel cell) or charger types (`Publicly available fast`/`slow`).
 
-### 2. Metrics & Measures (Values)
-* **`parameter`**
-* **`unit`**
+### 2. Pivoted Metrics & Measures (Values)
+* **`ev_sales`**: Number of new electric vehicles sold (pivoted from `EV sales`). Measures transition speed.
+* **`ev_stock`**: Total active fleet of electric vehicles (pivoted from `EV stock`). Crucial to estimate total grid electricity demand.
+* **`ev_sales_share`**: Percentage of EV sales relative to total new vehicle sales (pivoted from `EV sales share`). Perfect for cross-country market adoption comparisons.
+* **`ev_stock_share`**: Percentage of EV stock relative to all vehicles on the road (pivoted from `EV stock share`).
+* **`ev_charging_points`**: Number of charging stations (pivoted from `EV charging points`). Indicates supporting infrastructure readiness.
+* **`electricity_demand_ev`**: Total electricity consumed by EVs in gigawatt-hours (pivoted and renamed from `Electricity demand` in the ETL process).
+* **`oil_displacement_mbd`**: Estimated volume of oil displaced by EV usage in million barrels per day (pivoted from `Oil displacement Mbd`).
+* **`oil_displacement,_million_lge`**: Estimated volume of oil displaced by EV usage in million liters of gasoline equivalent (pivoted from `Oil displacement, million lge`).
