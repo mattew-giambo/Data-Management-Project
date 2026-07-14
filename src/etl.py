@@ -89,6 +89,8 @@ def transform(df_emissions, df_energy, df_ev):
     df_ev = df_ev[(df_ev['region'] != 'Rest of the world')]
     df_ev = df_ev[df_ev['category'] == 'Historical']
     df_ev = df_ev[(df_ev['year'] >= 2010) & (df_ev['year'] <= 2024)]
+    df_ev = df_ev[(df_ev['parameter'] != 'Oil displacement Mbd')]
+    df_ev = df_ev[(df_ev['parameter'] != 'Oil displacement, million lge')]
 
     # Standardizziamo il nome della colonna geografica per la join successiva
     df_ev = df_ev.rename(columns={'region': 'country'})
