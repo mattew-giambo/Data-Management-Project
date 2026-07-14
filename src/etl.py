@@ -37,10 +37,7 @@ def transform(df_emissions, df_energy, df_ev):
         'coal_co2',
         'coal_co2_per_capita',
         'co2_per_unit_energy',
-        'primary_energy_consumption',
-        'consumption_co2',
-        'consumption_co2_per_capita',
-        'consumption_co2_per_gdp'
+        'primary_energy_consumption'
     ]]
     df_energy = df_energy[[
         'country',
