@@ -1,4 +1,5 @@
 import pandas as pd
+from pathlib import Path
 
 def extract_data():
     """
@@ -7,10 +8,12 @@ def extract_data():
     """
     print("=== Extracting Raw Data ===")
     
-    ev_path = "raw_datasets/iea-global-ev-sales.csv"
-    co2_path = "raw_datasets/owid-co2-data.csv"
-    energy_path = "raw_datasets/owid-energy-data.csv"
-    continent_path = "raw_datasets/continent_country.csv"
+    base_path = Path(__file__).resolve().parents[2] 
+    
+    ev_path = base_path / "raw_datasets" / "iea-global-ev-sales.csv"
+    co2_path = base_path / "raw_datasets" / "owid-co2-data.csv"
+    energy_path = base_path / "raw_datasets" / "owid-energy-data.csv"
+    continent_path = base_path / "raw_datasets" / "continent_country.csv"
             
     print("Loading IEA Global EV Sales dataset...")
     ev = pd.read_csv(ev_path, low_memory=False)

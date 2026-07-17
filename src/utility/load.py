@@ -1,13 +1,21 @@
+from pathlib import Path
+
 def load_data(ev_wide, co2_clean, energy_clean):
     """
     Saves the cleaned DataFrames as CSV files in the clean_datasets folder and runs validation.
     """
     print("=== Loading Cleaned Data ===")
     
+    base_path = Path(__file__).resolve().parents[2] 
+    
+    ev_path = base_path / "clean_datasets" / "clean_iea_ev_sales.csv"
+    co2_path = base_path / "clean_datasets" / "clean_owid_co2.csv"
+    energy_path = base_path / "clean_datasets" / "clean_owid_energy.csv"
+
     print("Saving cleaned datasets to clean_datasets/...")
-    ev_wide.to_csv("clean_datasets/clean_iea_ev_sales.csv", index=False)
-    co2_clean.to_csv("clean_datasets/clean_owid_co2.csv", index=False)
-    energy_clean.to_csv("clean_datasets/clean_owid_energy.csv", index=False)
+    ev_wide.to_csv(ev_path, index=False)
+    co2_clean.to_csv(co2_path, index=False)
+    energy_clean.to_csv(energy_path, index=False)
     print("Clean CSV files successfully saved!\n")
     
     print("=== Data Validation Stage ===")

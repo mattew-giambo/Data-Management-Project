@@ -1,6 +1,6 @@
-import extract
-import transform
-import load
+import utility.extract as extract
+import utility.transform as transform
+import utility.load as load
 
 def run_etl():
     """
@@ -10,9 +10,7 @@ def run_etl():
 
     ev, co2, energy, continent_mapping = extract.extract_data()
     
-    ev_clean, co2_clean, energy_clean = transform.transform_data(
-        ev, co2, energy, continent_mapping
-    )
+    ev_clean, co2_clean, energy_clean = transform.transform_data(ev, co2, energy, continent_mapping)
     
     load.load_data(ev_clean, co2_clean, energy_clean)
     
