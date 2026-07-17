@@ -14,6 +14,8 @@ def extract_data():
     co2_path = base_path / "raw_datasets" / "owid-co2-data.csv"
     energy_path = base_path / "raw_datasets" / "owid-energy-data.csv"
     continent_path = base_path / "raw_datasets" / "continent_country.csv"
+    gdp_pop_path = base_path / "raw_datasets" / "gdp_population_countries.csv"
+    ember_path = base_path / "raw_datasets" / "release_generation_yearly_global.csv"
             
     print("Loading IEA Global EV Sales dataset...")
     ev = pd.read_csv(ev_path, low_memory=False)
@@ -31,8 +33,16 @@ def extract_data():
     continent_mapping = pd.read_csv(continent_path, keep_default_na=False)
     print(f"> Continent mapping loaded. Found {len(continent_mapping)} rows.")
     
+    print("Loading GDP and Population World Bank dataset...")
+    gdp_pop = pd.read_csv(gdp_pop_path, low_memory=False)
+    print(f"> GDP and Population data loaded. Found {len(gdp_pop)} rows.")
+    
+    print("Loading Ember global electricity generation dataset...")
+    ember = pd.read_csv(ember_path, low_memory=False)
+    print(f"> Ember data loaded. Found {len(ember)} rows.")
+    
     print("Extraction phase completed successfully!\n")
-    return ev, co2, energy, continent_mapping
+    return ev, co2, energy, continent_mapping, gdp_pop, ember
 
 if __name__ == "__main__":
     try:

@@ -8,9 +8,11 @@ def run_etl():
     """
     print("Starting the EV and Energy ETL Pipeline")
 
-    ev, co2, energy, continent_mapping = extract.extract_data()
+    ev, co2, energy, continent_mapping, gdp_pop, ember = extract.extract_data()
     
-    ev_clean, co2_clean, energy_clean = transform.transform_data(ev, co2, energy, continent_mapping)
+    ev_clean, co2_clean, energy_clean = transform.transform_data(
+        ev, co2, energy, continent_mapping, gdp_pop, ember
+    )
     
     load.load_data(ev_clean, co2_clean, energy_clean)
     

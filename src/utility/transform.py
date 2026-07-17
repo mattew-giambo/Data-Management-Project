@@ -73,13 +73,44 @@ def find_iso_code(name, owid_dict):
         
     return None, name
 
-def transform_data(ev, co2, energy, continent_mapping):
+def transform_data(ev, co2, energy, continent_mapping, gdp_pop, ember):
     """
     Applies data cleansing, automated mappings, pivots, and adds geographical
-    and temporal dimensions. Returns the three cleaned DataFrames.
+    and temporal dimensions. Also merges World Bank and Ember datasets to resolve gaps.
+    Returns the three cleaned DataFrames.
     """
     print("=== Transforming and Cleaning Data ===")
     
+    # Parse World Bank GDP and Population Data
+    print("Parsing World Bank GDP and Population dataset...")
+    gdp_pop = gdp_pop.dropna(subset=['Country Code'])
+    year_cols = [c for c in gdp_pop.columns if 'YR' in c]
+    melted = gdp_pop.melt(
+        id_vars=['Country Code', 'Series Code'],
+        value_vars=year_cols,
+        var_name='year_str',
+        value_name='value'
+    )
+    melted['year'] = melted['year_str'].str.split().str[0].astype(int)
+    melted['value'] = pd.to_numeric(melted['value'], errors='coerce')
+    
+    wb_pivoted = melted.pivot_table(
+        index=['Country Code', 'year'],
+        columns='Series Code',
+        values='value',
+        aggfunc='first'
+    ).reset_index()
+    
+    wb_pivoted = wb_pivoted.rename(columns={
+        'Country Code': 'isoCode',
+        'SP.POP.TOTL': 'population_wb',
+        'NY.GDP.MKTP.CD': 'gdp_wb'
+    })
+    
+    # Create dictionary mappings for fast lookup
+    wb_pop_map = wb_pivoted.set_index(['isoCode', 'year'])['population_wb'].to_dict()
+    wb_gdp_map = wb_pivoted.set_index(['isoCode', 'year'])['gdp_wb'].to_dict()
+
     # Clean the IEA EV Sales dataset
     print("Cleaning EV dataset...")
 
@@ -140,11 +171,13 @@ def transform_data(ev, co2, energy, continent_mapping):
     continent_name_map = cc_unique.set_index("Three_Letter_Country_Code")["Continent_Name"].to_dict()
     continent_code_map = cc_unique.set_index("Three_Letter_Country_Code")["Continent_Code"].to_dict()
     
+    # Add temporal and geographic attributes
     ev_wide["halfDecade"] = ev_wide["year"].apply(get_half_decade)
     ev_wide["pandemicPeriod"] = ev_wide["year"].apply(get_pandemic_period)
     ev_wide["continent"] = ev_wide["iso_code"].map(continent_name_map)
     ev_wide["continentCode"] = ev_wide["iso_code"].map(continent_code_map)
     
+    # Rename EV columns to match DFM
     rename_ev = {
         "iso_code": "isoCode",
         "mode": "vehicleType",
@@ -157,11 +190,24 @@ def transform_data(ev, co2, energy, continent_mapping):
     }
     ev_wide = ev_wide.rename(columns=rename_ev)
     
+    # Calculate total chargers and total EV stock per country-year to get chargingPointsPerEv ratio
+    total_chargers = ev_wide.groupby(['isoCode', 'year'])['evChargingPoints'].sum()
+    total_stock = ev_wide.groupby(['isoCode', 'year'])['evStock'].sum()
+    charging_ratio = (total_chargers / total_stock).fillna(0.0)
+    charging_ratio = charging_ratio.map(lambda x: 0.0 if x == float('inf') or x == float('-inf') else x)
+    
+    ev_wide['chargingPointsPerEv'] = ev_wide.set_index(['isoCode', 'year']).index.map(charging_ratio)
+    
+    # Add Population and GDP to EV dataset from World Bank
+    ev_wide['population'] = ev_wide.set_index(['isoCode', 'year']).index.map(wb_pop_map)
+    ev_wide['GDP'] = ev_wide.set_index(['isoCode', 'year']).index.map(wb_gdp_map)
+    
     ev_cols_order = [
         "country", "isoCode", "continent", "continentCode", 
         "year", "halfDecade", "pandemicPeriod", 
         "vehicleType", "powertrain", 
-        "evSales", "evSalesShare", "evStock", "evStockShare", "evElectricityDemand", "evChargingPoints"
+        "evSales", "evSalesShare", "evStock", "evStockShare", "evElectricityDemand", "evChargingPoints",
+        "chargingPointsPerEv", "population", "GDP"
     ]
     ev_transformed = ev_wide[ev_cols_order]
 
@@ -200,6 +246,20 @@ def transform_data(ev, co2, energy, continent_mapping):
         "primary_energy_consumption": "energyConsumption"
     }
     co2_clean = co2_clean.rename(columns=rename_co2)
+    
+    # Replace Population and GDP with World Bank data, fallback to original if missing
+    co2_clean['population_wb'] = co2_clean.set_index(['isoCode', 'year']).index.map(wb_pop_map)
+    co2_clean['gdp_wb'] = co2_clean.set_index(['isoCode', 'year']).index.map(wb_gdp_map)
+    co2_clean['population'] = co2_clean['population_wb'].fillna(co2_clean['population'])
+    co2_clean['GDP'] = co2_clean['gdp_wb'].fillna(co2_clean['GDP'])
+    co2_clean = co2_clean.drop(columns=['population_wb', 'gdp_wb'])
+    
+    # Recalculate derived columns based on the new population and GDP values
+    co2_clean['co2PerCapita'] = (co2_clean['co2Emissions'] * 1e6) / co2_clean['population']
+    co2_clean['co2PerGDP'] = (co2_clean['co2Emissions'] * 1e9) / co2_clean['GDP']
+    co2_clean['co2EmissionsOilPerCapita'] = (co2_clean['co2EmissionsOil'] * 1e6) / co2_clean['population']
+    co2_clean['co2EmissionsCoalPerCapita'] = (co2_clean['co2EmissionsCoal'] * 1e6) / co2_clean['population']
+
     
     co2_cols_order = [
         "country", "isoCode", "continent", "continentCode", 
@@ -253,6 +313,54 @@ def transform_data(ev, co2, energy, continent_mapping):
         "net_elec_imports": "netElectricityImports"
     }
     energy_clean = energy_clean.rename(columns=rename_energy)
+    
+    # Updating Ember Data for the Energy Dataset
+    print("Patching Energy dataset gaps with Ember electricity data...")
+    ember_countries = ember[ember['Area type'] == 'Country or economy']
+    ember_pivot = ember_countries.pivot_table(
+        index=['ISO 3 code', 'Year'],
+        columns='Electricity source',
+        values='Generation (TWh)',
+        aggfunc='first'
+    ).reset_index()
+    
+    ember_maps = {
+        'Total generation': 'electricityGeneration_ember',
+        'Demand': 'electricityDemand_ember',
+        'Fossil': 'fossilElectricityGeneration_ember',
+        'Coal': 'coalElectricityGeneration_ember',
+        'Gas': 'gasElectricityGeneration_ember',
+        'Renewables': 'renewableElectricityGeneration_ember',
+        'Clean': 'lowCarbonElectricityGeneration_ember',
+        'Wind': 'windElectricityGeneration_ember',
+        'Hydro': 'hydroElectricityGeneration_ember',
+        'Nuclear': 'nuclearElectricityGeneration_ember',
+        'Solar': 'solarElectricityGeneration_ember',
+        'Net imports': 'netElectricityImports_ember'
+    }
+    ember_pivot = ember_pivot.rename(columns=ember_maps)
+    ember_pivot = ember_pivot.rename(columns={'ISO 3 code': 'isoCode', 'Year': 'year'})
+    
+    energy_clean = pd.merge(energy_clean, ember_pivot[['isoCode', 'year'] + list(ember_maps.values())], on=['isoCode', 'year'], how='left')
+    
+    cols_to_patch = [
+        'electricityGeneration', 'electricityDemand', 'fossilElectricityGeneration',
+        'coalElectricityGeneration', 'gasElectricityGeneration', 'renewableElectricityGeneration',
+        'lowCarbonElectricityGeneration', 'windElectricityGeneration', 'hydroElectricityGeneration',
+        'nuclearElectricityGeneration', 'solarElectricityGeneration', 'netElectricityImports'
+    ]
+    for col in cols_to_patch:
+        ember_col = f'{col}_ember'
+        if ember_col in energy_clean.columns:
+            energy_clean[col] = energy_clean[col].fillna(energy_clean[ember_col])
+            energy_clean = energy_clean.drop(columns=[ember_col])
+
+    # Replace Population and GDP with World Bank data, fallback to original if missing
+    energy_clean['population_wb'] = energy_clean.set_index(['isoCode', 'year']).index.map(wb_pop_map)
+    energy_clean['gdp_wb'] = energy_clean.set_index(['isoCode', 'year']).index.map(wb_gdp_map)
+    energy_clean['population'] = energy_clean['population_wb'].fillna(energy_clean['population'])
+    energy_clean['GDP'] = energy_clean['gdp_wb'].fillna(energy_clean['GDP'])
+    energy_clean = energy_clean.drop(columns=['population_wb', 'gdp_wb'])
     
     energy_cols_order = [
         "country", "isoCode", "continent", "continentCode", 
