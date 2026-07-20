@@ -6,7 +6,7 @@ from typing import Optional
 
 
 # ---------------------------------------------------------------------------
-# Connection helpers
+# Connection helper
 # ---------------------------------------------------------------------------
 
 def get_connection(
@@ -14,13 +14,11 @@ def get_connection(
     port: int = 5432,
     dbname: str = "green_mobility",
     user: str = "postgres",
-    password: str = "ciao",
+    password: str = "postgres",
 ) -> psycopg2.extensions.connection:
     """
     Opens and returns a psycopg2 connection to the GREEN_MOBILITY database.
-    All parameters can be overridden via keyword arguments.
     """
-    print(f"  Connecting to {user}@{host}:{port}/{dbname} ...")
     conn = psycopg2.connect(
         host=host,
         port=port,
@@ -32,7 +30,7 @@ def get_connection(
 
 
 def _nan_to_none(value):
-    """Converts NaN / ±Inf float values to None so psycopg2 maps them to NULL."""
+    """Converts NaN / Inf values to None for PostgreSQL NULL compatibility."""
     if value is None:
         return None
     try:
@@ -49,12 +47,10 @@ def _nan_to_none(value):
 
 def _load_country_dim(cur, ev_df: pd.DataFrame, co2_df: pd.DataFrame) -> dict:
     """
-    Populates CountryDim and returns a dict {isoCode -> keyC}.
-    Country rows are merged from both datasets; duplicates (same isoCode) are ignored.
+    Populates CountryDim and returns a dictionary mapping isoCode to keyC.
     """
     print("  Loading CountryDim...")
 
-    # Build a unified country catalogue from both DataFrames
     ev_countries = ev_df[["country", "isoCode", "continent", "continentCode"]].drop_duplicates(subset=["isoCode"])
     co2_countries = co2_df[["country", "isoCode", "continent", "continentCode"]].drop_duplicates(subset=["isoCode"])
     all_countries = (
@@ -80,7 +76,6 @@ def _load_country_dim(cur, ev_df: pd.DataFrame, co2_df: pd.DataFrame) -> dict:
             _nan_to_none(row.get("continentCode")),
         ))
 
-    # Fetch the full mapping (including pre-existing rows)
     cur.execute("SELECT keyC, isoCode FROM CountryDim;")
     for key_c, iso in cur.fetchall():
         iso_to_key[iso] = key_c
@@ -91,8 +86,7 @@ def _load_country_dim(cur, ev_df: pd.DataFrame, co2_df: pd.DataFrame) -> dict:
 
 def _load_year_dim(cur, ev_df: pd.DataFrame, co2_df: pd.DataFrame) -> dict:
     """
-    Populates YearDim and returns a dict {year -> keyY}.
-    halfDecade and pandemicPeriod are expected columns in both DataFrames.
+    Populates YearDim and returns a dictionary mapping year to keyY.
     """
     print("  Loading YearDim...")
 
@@ -122,7 +116,7 @@ def _load_year_dim(cur, ev_df: pd.DataFrame, co2_df: pd.DataFrame) -> dict:
 
 def _load_vehicle_type_dim(cur, ev_df: pd.DataFrame) -> dict:
     """
-    Populates VehicleTypeDim and returns a dict {vehicleType -> keyV}.
+    Populates VehicleTypeDim and returns a dictionary mapping vehicleType to keyV.
     """
     print("  Loading VehicleTypeDim...")
 
@@ -146,7 +140,7 @@ def _load_vehicle_type_dim(cur, ev_df: pd.DataFrame) -> dict:
 
 def _load_powertrain_dim(cur, ev_df: pd.DataFrame) -> dict:
     """
-    Populates PowertrainDim and returns a dict {powertrain -> keyP}.
+    Populates PowertrainDim and returns a dictionary mapping powertrain to keyP.
     """
     print("  Loading PowertrainDim...")
 
@@ -182,9 +176,6 @@ def _load_ev_market(
 ) -> None:
     """
     Populates the EVMarket fact table.
-    Columns used from ev_df:
-        isoCode, year, vehicleType, powertrain,
-        evSales, evSalesShare, evStock, evStockShare, evElectricityDemand
     """
     print("  Loading EVMarket...")
 
@@ -228,34 +219,14 @@ def _load_ev_market(
 
 def _load_ev_infrastructure(
     cur,
-    ev_df: pd.DataFrame,
+    infra_df: pd.DataFrame,
     iso_to_key: dict,
     year_to_key: dict,
 ) -> None:
     """
     Populates the EVInfrastructure fact table.
-    Infrastructure metrics are aggregated per (country, year) because the raw
-    data is split by vehicleType/powertrain but the fact table is keyed only on
-    (keyC, keyY).
-    Columns used from ev_df:
-        isoCode, year, evChargingPoints, chargingPointsPerEv
     """
     print("  Loading EVInfrastructure...")
-
-    # Keep rows that actually carry charging-point data
-    infra_cols = ["isoCode", "year", "evChargingPoints", "chargingPointsPerEv"]
-    available = [c for c in infra_cols if c in ev_df.columns]
-    infra_df = ev_df[available].copy()
-
-    # Sum charging points per (country, year); chargingPointsPerEv is already
-    # an aggregate ratio, so take the mean across vehicle types
-    agg_map = {}
-    if "evChargingPoints" in infra_df.columns:
-        agg_map["evChargingPoints"] = "sum"
-    if "chargingPointsPerEv" in infra_df.columns:
-        agg_map["chargingPointsPerEv"] = "mean"
-
-    infra_agg = infra_df.groupby(["isoCode", "year"], as_index=False).agg(agg_map)
 
     sql = """
         INSERT INTO EVInfrastructure
@@ -263,13 +234,15 @@ def _load_ev_infrastructure(
         VALUES (%s, %s, %s, %s, %s, %s)
         ON CONFLICT (keyC, keyY) DO UPDATE SET
             evChargingPoints    = EXCLUDED.evChargingPoints,
+            fastChargingPoints  = EXCLUDED.fastChargingPoints,
+            slowChargingPoints  = EXCLUDED.slowChargingPoints,
             chargingPointsPerEv = EXCLUDED.chargingPointsPerEv;
     """
 
     rows = []
     skipped = 0
 
-    for _, row in infra_agg.iterrows():
+    for _, row in infra_df.iterrows():
         key_c = iso_to_key.get(row["isoCode"])
         key_y = year_to_key.get(int(row["year"]))
 
@@ -280,8 +253,8 @@ def _load_ev_infrastructure(
         rows.append((
             key_c, key_y,
             _nan_to_none(row.get("evChargingPoints")),
-            None,   # fastChargingPoints – not available in source data
-            None,   # slowChargingPoints – not available in source data
+            _nan_to_none(row.get("fastChargingPoints")),
+            _nan_to_none(row.get("slowChargingPoints")),
             _nan_to_none(row.get("chargingPointsPerEv")),
         ))
 
@@ -297,14 +270,6 @@ def _load_country_energy(
 ) -> None:
     """
     Populates the CountryEnergy fact table.
-    Columns used from energy_df (schema from init.sql):
-        energyConsumption, electricityGeneration, electricityDemand,
-        fossilElectricityGeneration, coalElectricityGeneration,
-        oilElectricityGeneration, gasElectricityGeneration,
-        renewableElectricityGeneration, lowCarbonElectricityGeneration,
-        windElectricityGeneration, hydroElectricityGeneration,
-        nuclearElectricityGeneration, otherElectricityGeneration,
-        solarElectricityGeneration, netElectricityImports
     """
     print("  Loading CountryEnergy...")
 
@@ -374,12 +339,6 @@ def _load_country_macroeconomics(
 ) -> None:
     """
     Populates the CountryMacroeconomics fact table.
-    Columns used from co2_df (schema from init.sql):
-        population, GDP,
-        co2Emissions, co2PerCapita, co2PerGDP,
-        co2EmissionsOil, co2EmissionsOilPerCapita,
-        co2EmissionsCoal, co2EmissionsCoalPerCapita,
-        co2EmissionsPerUnitEnergy
     """
     print("  Loading CountryMacroeconomics...")
 
@@ -438,46 +397,36 @@ def _load_country_macroeconomics(
 
 def insert_to_db(
     ev_df: pd.DataFrame,
+    infra_df: pd.DataFrame,
     co2_df: pd.DataFrame,
-    energy_df: pd.DataFrame
+    energy_df: pd.DataFrame,
+    host: str = "localhost",
+    port: int = 5432,
+    dbname: str = "green_mobility",
+    user: str = "postgres",
+    password: str = "postgres",
 ) -> None:
     """
     Inserts transformed ETL data into the GREEN_MOBILITY PostgreSQL database.
-
-    The function follows the load order required by the star schema:
-        1. Dimension tables (CountryDim, YearDim, VehicleTypeDim, PowertrainDim)
-        2. Fact tables    (EVMarket, EVInfrastructure, CountryEnergy, CountryMacroeconomics)
-
-    Every INSERT uses ON CONFLICT … DO UPDATE (upsert) so that the function is
-    idempotent and can be re-run safely without duplicating data.
-
-    Parameters
-    ----------
-    ev_df      : DataFrame returned by transform.transform_data() – EV data.
-    co2_df     : DataFrame returned by transform.transform_data() – CO2 / macro data.
-    energy_df  : DataFrame returned by transform.transform_data() – energy data.
-    host       : PostgreSQL server host.
-    port       : PostgreSQL server port.
-    dbname     : Target database name (must already exist and be initialised via init.sql).
-    user       : PostgreSQL username.
-    password   : PostgreSQL password.
     """
     print("\n=== Inserting Data into PostgreSQL Database ===")
-    conn = get_connection()
+    print(f"  Connecting to {user}@{host}:{port}/{dbname} ...")
+
+    conn = get_connection(host=host, port=port, dbname=dbname, user=user, password=password)
 
     try:
-        with conn:                     # auto-commit on success, rollback on exception
+        with conn:
             with conn.cursor() as cur:
 
-                # ── Dimension tables ───────────────────────────────────────
+                # Dimension tables
                 iso_to_key  = _load_country_dim(cur, ev_df, co2_df)
                 year_to_key = _load_year_dim(cur, ev_df, co2_df)
                 vt_to_key   = _load_vehicle_type_dim(cur, ev_df)
                 pt_to_key   = _load_powertrain_dim(cur, ev_df)
 
-                # ── Fact tables ────────────────────────────────────────────
+                # Fact tables
                 _load_ev_market(cur, ev_df, iso_to_key, year_to_key, vt_to_key, pt_to_key)
-                _load_ev_infrastructure(cur, ev_df, iso_to_key, year_to_key)
+                _load_ev_infrastructure(cur, infra_df, iso_to_key, year_to_key)
                 _load_country_energy(cur, energy_df, iso_to_key, year_to_key)
                 _load_country_macroeconomics(cur, co2_df, iso_to_key, year_to_key)
 
