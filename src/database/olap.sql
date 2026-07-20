@@ -107,9 +107,9 @@ JOIN YearDim y ON i.keyY = y.keyY;
 SELECT
     c.country,
     y.year,
-    em.evElectricityDemand,
-    ce.renewableElectricityGeneration,
-    ce.fossilElectricityGeneration
+    SUM(em.evElectricityDemand) as evElectricityDemand,
+    max(ce.renewableElectricityGeneration) as renewableElectricityGeneration,
+    max(ce.fossilElectricityGeneration) as fossilElectricityGeneration
 FROM EVMarket em
 JOIN CountryEnergy ce
     ON em.keyC = ce.keyC
@@ -117,10 +117,10 @@ JOIN CountryEnergy ce
 JOIN CountryDim c ON em.keyC = c.keyC
 JOIN YearDim y ON em.keyY = y.keyY
 WHERE em.evElectricityDemand > 0
-ORDER BY
-    ce.fossilElectricityGeneration DESC;
+GROUP BY c.country, y.year
+ORDER BY c.country, y.year;
 
--- 9. Continent × Pandemic Period (GROUPING SETS)
+-- 9. Continent × Pandemic Period (GROUPING SETS) (superflua)
 SELECT
     c.continent,
     y.pandemicPeriod,
@@ -148,9 +148,9 @@ FROM CountryEnergy ce
 JOIN CountryDim c ON ce.keyC = c.keyC
 JOIN YearDim y ON ce.keyY = y.keyY
 WHERE electricityGeneration > 0
-ORDER BY renewable_percentage DESC;
+ORDER BY c.country, y.year;
 
--- 11. Countries Improving the Most
+-- 11. Countries Improving the Most (Superflua)
 SELECT
     c.country,
     MIN(y.year) AS first_year,
@@ -169,18 +169,21 @@ ORDER BY improvement DESC;
 SELECT
     c.country,
     y.year,
-    em.evSalesShare,
-    ce.renewableElectricityGeneration,
-    cm.co2PerCapita
+    SUM(em.evSalesShare) AS evSalesShare, -- Usa SUM() se le quote sono spezzate per categoria (es. BEV + PHEV), altrimenti AVG()
+    AVG(ce.renewableElectricityGeneration) AS renewableElectricityGeneration,
+    AVG(cm.co2PerCapita) AS co2PerCapita
 FROM EVMarket em
-JOIN CountryEnergy ce
+JOIN CountryEnergy ce 
     ON em.keyC = ce.keyC
-   AND em.keyY = ce.keyY
+    AND em.keyY = ce.keyY
 JOIN CountryMacroeconomics cm
     ON em.keyC = cm.keyC
-   AND em.keyY = cm.keyY
+    AND em.keyY = cm.keyY
 JOIN CountryDim c ON em.keyC = c.keyC
 JOIN YearDim y ON em.keyY = y.keyY
-ORDER BY
+GROUP BY 
+    c.country, 
+    y.year
+ORDER BY 
     c.country,
     y.year;
