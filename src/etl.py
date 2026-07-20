@@ -4,14 +4,7 @@ import utility.load as load
 import utility.db_loader as db_loader
 
 
-def run_etl(
-    db_host: str = "localhost",
-    db_port: int = 5432,
-    db_name: str = "green_mobility",
-    db_user: str = "postgres",
-    db_password: str = "postgres",
-    skip_db: bool = False,
-):
+def run_etl(skip_db: bool = False):
     """
     Main function to run the full ETL pipeline: Extract, Transform, Load, and
     Insert into the PostgreSQL database.
@@ -39,12 +32,7 @@ def run_etl(
         db_loader.insert_to_db(
             ev_df=ev_clean,
             co2_df=co2_clean,
-            energy_df=energy_clean,
-            host=db_host,
-            port=db_port,
-            dbname=db_name,
-            user=db_user,
-            password=db_password,
+            energy_df=energy_clean
         )
 
     print("ETL Pipeline completed successfully!")

@@ -41,10 +41,10 @@ CREATE TABLE EVMarket (
     keyV INT NOT NULL,
     keyP INT NOT NULL,
 
-    evSales NUMERIC(15,1),
-    evSalesShare NUMERIC(21, 20),
+    evSales INT,
+    evSalesShare NUMERIC(10, 6),
     evStock NUMERIC(15,1),
-    evStockShare NUMERIC(21, 20),
+    evStockShare NUMERIC(10, 6),
     evElectricityDemand NUMERIC(10,2),
 
     PRIMARY KEY (keyC, keyY, keyV, keyP),
@@ -64,9 +64,9 @@ CREATE TABLE EVInfrastructure (
     keyC INT NOT NULL,
     keyY INT NOT NULL,
 
-    evChargingPoints NUMERIC(10,1),
-    fastChargingPoints NUMERIC(10,1),
-    slowChargingPoints NUMERIC(10,1),
+    evChargingPoints INT,
+    fastChargingPoints INT,
+    slowChargingPoints INT,
     chargingPointsPerEv NUMERIC(10,4),
 
     PRIMARY KEY (keyC, keyY),
@@ -85,8 +85,8 @@ CREATE TABLE CountryEnergy (
     keyY INT NOT NULL,
 
     energyConsumption NUMERIC(18,4),
-    electricityGeneration NUMERIC(18,3),
-    electricityDemand NUMERIC(18,3),
+    electricityGeneration NUMERIC(18,4),
+    electricityDemand NUMERIC(18,4),
 
     fossilElectricityGeneration NUMERIC(18,4),
     coalElectricityGeneration NUMERIC(18,4),
@@ -119,17 +119,17 @@ CREATE TABLE CountryMacroeconomics (
     keyC INT NOT NULL,
     keyY INT NOT NULL,
 
-    population INT,
+    population BIGINT,
     GDP NUMERIC(18,2),
 
     co2Emissions NUMERIC(18,4),
     co2PerCapita NUMERIC(18,4),
     co2PerGDP NUMERIC(18,4),
 
-    co2EmissionsOil NUMERIC(18,2),
+    co2EmissionsOil NUMERIC(18,4),
     co2EmissionsOilPerCapita NUMERIC(18,4),
 
-    co2EmissionsCoal NUMERIC(18,2),
+    co2EmissionsCoal NUMERIC(18,4),
     co2EmissionsCoalPerCapita NUMERIC(18,4),
 
     co2EmissionsPerUnitEnergy NUMERIC(18,4),

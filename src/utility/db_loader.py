@@ -14,12 +14,13 @@ def get_connection(
     port: int = 5432,
     dbname: str = "green_mobility",
     user: str = "postgres",
-    password: str = "postgres",
+    password: str = "ciao",
 ) -> psycopg2.extensions.connection:
     """
     Opens and returns a psycopg2 connection to the GREEN_MOBILITY database.
     All parameters can be overridden via keyword arguments.
     """
+    print(f"  Connecting to {user}@{host}:{port}/{dbname} ...")
     conn = psycopg2.connect(
         host=host,
         port=port,
@@ -438,12 +439,7 @@ def _load_country_macroeconomics(
 def insert_to_db(
     ev_df: pd.DataFrame,
     co2_df: pd.DataFrame,
-    energy_df: pd.DataFrame,
-    host: str = "localhost",
-    port: int = 5432,
-    dbname: str = "green_mobility",
-    user: str = "postgres",
-    password: str = "postgres",
+    energy_df: pd.DataFrame
 ) -> None:
     """
     Inserts transformed ETL data into the GREEN_MOBILITY PostgreSQL database.
@@ -467,9 +463,7 @@ def insert_to_db(
     password   : PostgreSQL password.
     """
     print("\n=== Inserting Data into PostgreSQL Database ===")
-    print(f"  Connecting to {user}@{host}:{port}/{dbname} ...")
-
-    conn = get_connection(host=host, port=port, dbname=dbname, user=user, password=password)
+    conn = get_connection()
 
     try:
         with conn:                     # auto-commit on success, rollback on exception
