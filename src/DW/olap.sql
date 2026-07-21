@@ -2,14 +2,21 @@
 -- Question: How have EV sales evolved across continents over time?
 
 SELECT
-    c.continent,
+    cont.continent,
     y.year,
-    SUM(m.evSales) AS total_ev_sales
-FROM EVMarket m
-JOIN CountryDim c ON m.keyC = c.keyC
-JOIN YearDim y ON m.keyY = y.keyY
-GROUP BY ROLLUP(c.continent, y.year)
-ORDER BY c.continent, y.year;
+    COALESCE(SUM(m.evSales), 0) AS total_ev_sales
+FROM (
+    SELECT DISTINCT continent 
+    FROM CountryDim
+) cont
+CROSS JOIN YearDim y
+LEFT JOIN CountryDim c 
+    ON c.continent = cont.continent
+LEFT JOIN EVMarket m 
+    ON m.keyC = c.keyC 
+   AND m.keyY = y.keyY
+GROUP BY ROLLUP(cont.continent, y.year)
+ORDER BY cont.continent, y.year;
 
 -- 2. Renewable Electricity vs CO₂ Emissions
 -- Question: Are countries with more renewable electricity producing less CO₂?
