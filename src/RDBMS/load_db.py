@@ -240,7 +240,7 @@ def load_energy_data(cur, energy_df, iso_map, year_map):
     """Populate EnergyData table."""
     print("  Loading EnergyData table...")
     sql = """
-        INSERT INTO EnergyData (
+        INSERT INTO CountryEnergy (
             country_id, year_id,
             energy_consumption, electricity_generation, electricity_demand,
             fossil_electricity_generation, coal_electricity_generation,
@@ -294,7 +294,7 @@ def load_macroeconomic_data(cur, co2_df, iso_map, year_map):
     """Populate MacroeconomicData table."""
     print("  Loading MacroeconomicData table...")
     sql = """
-        INSERT INTO MacroeconomicData (
+        INSERT INTO CountryMacroeconomics (
             country_id, year_id,
             population, gdp,
             co2_emissions, co2_per_capita, co2_per_gdp,

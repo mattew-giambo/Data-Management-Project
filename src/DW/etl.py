@@ -1,7 +1,7 @@
-import utility.extract as extract
-import utility.transform as transform
-import utility.load as load
-import utility.db_loader as db_loader
+import DW.utility.extract as extract
+import DW.utility.transform as transform
+import DW.utility.load as load
+import DW.utility.db_loader as db_loader
 
 
 def run_etl(
