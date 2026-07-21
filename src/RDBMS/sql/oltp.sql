@@ -45,8 +45,7 @@
 SELECT
     c.continent,
     y.year,
-    COALESCE(SUM(s.ev_sales), 0)    AS total_ev_sales,
-    'detail'                         AS aggregation_level
+    COALESCE(SUM(s.ev_sales), 0)    AS total_ev_sales
 FROM EVSales s
 JOIN Country c ON s.country_id = c.country_id
 JOIN Year    y ON s.year_id    = y.year_id
@@ -58,8 +57,7 @@ UNION ALL
 SELECT
     c.continent,
     NULL::INT                        AS year,
-    COALESCE(SUM(s.ev_sales), 0)    AS total_ev_sales,
-    'continent_total'                AS aggregation_level
+    COALESCE(SUM(s.ev_sales), 0)    AS total_ev_sales
 FROM EVSales s
 JOIN Country c ON s.country_id = c.country_id
 GROUP BY c.continent
@@ -95,8 +93,8 @@ SELECT
     y.year,
     e.renewable_electricity_generation,
     m.co2_emissions
-FROM EnergyData e
-JOIN MacroeconomicData m
+FROM CountryEnergy e
+JOIN CountryMacroeconomics m
     ON  e.country_id = m.country_id
     AND e.year_id    = m.year_id
 JOIN Country c ON e.country_id = c.country_id
@@ -124,7 +122,7 @@ SELECT
         ELSE                             'Low GDP'
     END                                 AS gdp_class,
     AVG(s.ev_sales_share)               AS avg_ev_share
-FROM MacroeconomicData m
+FROM CountryMacroeconomics m
 JOIN EVSales s
     ON  m.country_id = s.country_id
     AND m.year_id    = s.year_id
@@ -194,8 +192,7 @@ ORDER BY a.year, ranking;
 SELECT
     vt.type_name                        AS vehicle_type,
     pt.powertrain_name                  AS powertrain,
-    SUM(s.ev_sales)                     AS total_sales,
-    '(type, powertrain)'                AS cube_cell
+    SUM(s.ev_sales)                     AS total_sales
 FROM EVSales s
 JOIN VehicleType vt ON s.vehicle_type_id = vt.vehicle_type_id
 JOIN Powertrain  pt ON s.powertrain_id   = pt.powertrain_id
@@ -206,9 +203,8 @@ UNION ALL
 -- Combination 2: (vehicle_type, NULL) — subtotal by type
 SELECT
     vt.type_name,
-    NULL::VARCHAR                        AS powertrain,
-    SUM(s.ev_sales)                      AS total_sales,
-    '(type)'                             AS cube_cell
+    NULL         AS powertrain,
+    SUM(s.ev_sales)                      AS total_sales
 FROM EVSales s
 JOIN VehicleType vt ON s.vehicle_type_id = vt.vehicle_type_id
 GROUP BY vt.type_name
@@ -217,10 +213,9 @@ UNION ALL
 
 -- Combination 3: (NULL, powertrain) — subtotal by powertrain
 SELECT
-    NULL::VARCHAR                        AS vehicle_type,
+    NULL                      AS vehicle_type,
     pt.powertrain_name,
-    SUM(s.ev_sales)                      AS total_sales,
-    '(powertrain)'                       AS cube_cell
+    SUM(s.ev_sales)                      AS total_sales
 FROM EVSales s
 JOIN Powertrain pt ON s.powertrain_id = pt.powertrain_id
 GROUP BY pt.powertrain_name
@@ -229,10 +224,9 @@ UNION ALL
 
 -- Combination 4: (NULL, NULL) — grand total
 SELECT
-    NULL::VARCHAR                        AS vehicle_type,
-    NULL::VARCHAR                        AS powertrain,
-    SUM(s.ev_sales)                      AS total_sales,
-    '(grand total)'                      AS cube_cell
+    NULL                       AS vehicle_type,
+    NULL                       AS powertrain,
+    SUM(s.ev_sales)                      AS total_sales
 FROM EVSales s
 
 ORDER BY vehicle_type, powertrain;
@@ -319,7 +313,7 @@ SELECT
     MAX(e.renewable_electricity_generation)     AS renewable_electricity_generation,
     MAX(e.fossil_electricity_generation)        AS fossil_electricity_generation
 FROM EVSales s
-JOIN EnergyData e
+JOIN CountryEnergy e
     ON  s.country_id = e.country_id
     AND s.year_id    = e.year_id
 JOIN Country c ON s.country_id = c.country_id
@@ -350,8 +344,7 @@ ORDER BY c.country_name, y.year;
 SELECT
     c.continent,
     y.pandemic_period,
-    SUM(s.ev_sales)                     AS sales,
-    '(continent, period)'               AS grouping_set
+    SUM(s.ev_sales)                     AS sales
 FROM EVSales s
 JOIN Country c ON s.country_id = c.country_id
 JOIN Year    y ON s.year_id    = y.year_id
@@ -363,8 +356,7 @@ UNION ALL
 SELECT
     c.continent,
     NULL::VARCHAR                        AS pandemic_period,
-    SUM(s.ev_sales)                      AS sales,
-    '(continent)'                        AS grouping_set
+    SUM(s.ev_sales)                      AS sales
 FROM EVSales s
 JOIN Country c ON s.country_id = c.country_id
 GROUP BY c.continent
@@ -375,8 +367,7 @@ UNION ALL
 SELECT
     NULL::VARCHAR                        AS continent,
     y.pandemic_period,
-    SUM(s.ev_sales)                      AS sales,
-    '(period)'                           AS grouping_set
+    SUM(s.ev_sales)                      AS sales
 FROM EVSales s
 JOIN Year y ON s.year_id = y.year_id
 GROUP BY y.pandemic_period
@@ -387,8 +378,7 @@ UNION ALL
 SELECT
     NULL::VARCHAR                        AS continent,
     NULL::VARCHAR                        AS pandemic_period,
-    SUM(s.ev_sales)                      AS sales,
-    '(grand total)'                      AS grouping_set
+    SUM(s.ev_sales)                      AS sales
 FROM EVSales s
 
 ORDER BY continent, pandemic_period;
@@ -414,7 +404,7 @@ SELECT
               / e.electricity_generation,
         2
     )                                           AS renewable_percentage
-FROM EnergyData e
+FROM CountryEnergy e
 JOIN Country c ON e.country_id = c.country_id
 JOIN Year    y ON e.year_id    = y.year_id
 WHERE e.electricity_generation > 0
@@ -468,10 +458,10 @@ SELECT
     AVG(e.renewable_electricity_generation)     AS renewable_electricity_generation,
     AVG(m.co2_per_capita)                       AS co2_per_capita
 FROM EVSales s
-JOIN EnergyData e
+JOIN CountryEnergy e
     ON  s.country_id = e.country_id
     AND s.year_id    = e.year_id
-JOIN MacroeconomicData m
+JOIN CountryMacroeconomics m
     ON  s.country_id = m.country_id
     AND s.year_id    = m.year_id
 JOIN Country c ON s.country_id = c.country_id
