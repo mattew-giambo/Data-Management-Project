@@ -1,13 +1,13 @@
 query_id,label,rdbms_exec_ms,dw_exec_ms,rdbms_plan_ms,dw_plan_ms,rdbms_total_ms,dw_total_ms
-Q1,EV Sales (Continent x Year),2.589,3.01,0.201,0.107,2.791,3.117
-Q2,Renewable Electricity vs CO2,3.286,3.125,0.383,0.321,3.669,3.446
-Q3,Rich vs Poor Countries,2.492,2.404,0.115,0.119,2.607,2.523
-Q4,Top Countries by EV Stock,6.845,1.911,0.096,0.074,6.941,1.985
-Q5,Vehicle Type Analysis,3.308,1.76,0.12,0.057,3.427,1.817
-Q6,Pandemic Impact,0.974,0.998,0.028,0.027,1.003,1.025
-Q7,Infrastructure Growth,0.443,0.351,0.144,0.067,0.587,0.418
-Q8,Green Elec & High EV Demand,0.417,0.411,0.306,0.304,0.723,0.715
-Q9,Continent x Pandemic Period,3.417,1.766,0.157,0.065,3.574,1.831
-Q10,Renewable Share %,2.426,2.441,0.078,0.081,2.504,2.521
-Q11,Countries Improving Most,1.497,1.529,0.07,0.065,1.567,1.594
-Q12,Is EV Adoption Reducing CO2?,3.216,3.088,0.865,0.855,4.08,3.942
+Q1,EV Sales (Continent x Year),3.381,3.582,0.377,0.227,3.758,3.809
+Q2,Renewable Electricity vs CO2,3.208,3.104,0.344,0.323,3.552,3.427
+Q3,Rich vs Poor Countries,2.698,2.559,0.151,0.158,2.849,2.717
+Q4,Top Countries by EV Stock,7.162,2.005,0.144,0.123,7.306,2.129
+Q5,Vehicle Type Analysis,3.46,1.879,0.155,0.084,3.615,1.964
+Q6,Pandemic Impact,1.02,1.003,0.034,0.033,1.054,1.037
+Q7,Infrastructure Growth,0.441,0.345,0.15,0.078,0.591,0.424
+Q8,Green Elec & High EV Demand,0.393,0.389,0.268,0.269,0.661,0.658
+Q9,Continent x Pandemic Period,3.39,1.738,0.156,0.078,3.546,1.816
+Q10,Renewable Share %,2.302,2.319,0.088,0.085,2.391,2.404
+Q11,Countries Improving Most,1.506,1.494,0.077,0.072,1.583,1.566
+Q12,Is EV Adoption Reducing CO2?,3.272,3.218,0.882,0.862,4.155,4.081

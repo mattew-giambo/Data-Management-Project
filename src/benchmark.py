@@ -93,7 +93,7 @@ def _avg(metric_list: list) -> dict:
 # Benchmark runner
 # ============================================================
 
-def run_benchmark(rdbms_conn, dw_conn, warmup_runs=1, measured_runs=4) -> list:
+def run_benchmark(rdbms_conn, dw_conn, measured_runs=10) -> list:
     results = []
     query_ids = sorted(DW_QUERIES.keys(), key=lambda q: int(q[1:]))
 
@@ -102,13 +102,6 @@ def run_benchmark(rdbms_conn, dw_conn, warmup_runs=1, measured_runs=4) -> list:
 
         rdbms_sql = RDBMS_QUERIES[qid]
         dw_sql    = DW_QUERIES[qid]
-
-        # Warmup (fills buffer cache)
-        for _ in range(warmup_runs):
-            try: run_explain(rdbms_conn, rdbms_sql)
-            except Exception: pass
-            try: run_explain(dw_conn,    dw_sql)
-            except Exception: pass
 
         # Measured runs
         rm_list, dm_list = [], []
@@ -164,9 +157,7 @@ def main():
     parser.add_argument("--dw-db",     default="green_mobility")
     parser.add_argument("--user",      default="postgres")
     parser.add_argument("--password",  default="postgres")
-    parser.add_argument("--warmup",    type=int, default=1,
-                        help="Warmup runs before measuring (default: 1)")
-    parser.add_argument("--runs",      type=int, default=5,
+    parser.add_argument("--runs",      type=int, default=10,
                         help="Measured runs per query (default: 3)")
     args = parser.parse_args()
 
@@ -179,11 +170,10 @@ def main():
     dw_conn.autocommit = True
 
     print(f"\nRunning benchmark  "
-          f"({args.warmup} warmup + {args.runs} measured runs per query)...\n")
+          f"{args.runs} measured runs per query...\n")
 
     try:
         results = run_benchmark(rdbms_conn, dw_conn,
-                                warmup_runs=args.warmup,
                                 measured_runs=args.runs)
         
         src_dir = Path(__file__).resolve().parent

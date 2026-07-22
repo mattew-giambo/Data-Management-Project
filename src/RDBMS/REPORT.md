@@ -80,30 +80,36 @@ All queries were benchmarked using the Python script [`benchmark.py`](../benchma
 - **Execution time** (ms): time the engine spent actually executing the plan;
 - **Total time** (ms): sum of planning and execution time.
 
-Each query was ran **5 times** on both databases. The reported table are the **average** of the three measured runs.
+Each query was ran **10 times** on both databases. The reported table are the **average** of the three measured runs.
 
 ### 4.2 Results
 
 The raw results are stored in [`benchmark_results.csv`](../benchmark_results.csv). The table below summarises total time (planning + execution) for each query:
 
-| ID | Query Label | RDBMS Total (ms) | DW Total (ms) | DW Speedup |
-|---|---|---:|---:|---:|
-| Q1 | EV Sales (Continent × Year) | 3.771 | 3.770 | 1.00x |
-| Q2 | Renewable Electricity vs $CO_2$ | 5.550 | 5.097 | 1.09x |
-| Q3 | Rich vs Poor Countries | 4.003 | 3.828 | 1.05x |
-| Q4 | Top Countries by EV Stock | 9.966 | 2.591 | 3.85x |
-| Q5 | Vehicle Type Analysis | 6.855 | 2.864 | 2.39x |
-| Q6 | Pandemic Impact | 1.393 | 1.769 | 0.79x |
-| Q7 | Infrastructure Growth | 0.771 | 0.701 | 1.10x |
-| Q8 | Green Elec & High EV Demand | 1.128 | 1.036 | 1.09x |
-| Q9 | Continent × Pandemic Period | 4.483 | 2.906 | 1.54x |
-| Q10 | Renewable Share % | 4.075 | 3.254 | 1.25x |
-| Q11 | Countries Improving Most | 2.614 | 2.424 | 1.08x |
-| Q12 | Is EV Adoption Reducing $CO_2$? | 6.214 | 6.678 | 0.93x |
+| ID | Query Label | RDBMS Plan (ms) | RDBMS Exec (ms) | DW Plan (ms) | DW Exec (ms) | RDBMS Total (ms) | DW Total (ms) | Speedup |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| Q1 | EV Sales (Continent × Year) | 0.377 | 3.381 | 0.227 | 3.582 | 3.758 | 3.809 | 0.99x |
+| Q2 | Renewable Electricity vs $CO_2$ | 0.344 | 3.208 | 0.323 | 3.104 | 3.552 | 3.427 | 1.04x |
+| Q3 | Rich vs Poor Countries | 0.151 | 2.698 | 0.158 | 2.559 | 2.849 | 2.717 | 1.05x |
+| Q4 | Top Countries by EV Stock | 0.144 | 7.162 | 0.123 | 2.005 | 7.306 | 2.129 | 3.43x |
+| Q5 | Vehicle Type Analysis | 0.155 | 3.460 | 0.084 | 1.879 | 3.615 | 1.964 | 1.84x |
+| Q6 | Pandemic Impact | 0.034 | 1.020 | 0.033 | 1.003 | 1.054 | 1.037 | 1.02x |
+| Q7 | Infrastructure Growth | 0.150 | 0.441 | 0.078 | 0.345 | 0.591 | 0.424 | 1.39x |
+| Q8 | Green Elec & High EV Demand | 0.268 | 0.393 | 0.269 | 0.389 | 0.661 | 0.658 | 1.00x |
+| Q9 | Continent × Pandemic Period | 0.156 | 3.390 | 0.078 | 1.738 | 3.546 | 1.816 | 1.95x |
+| Q10 | Renewable Share % | 0.088 | 2.302 | 0.085 | 2.319 | 2.391 | 2.404 | 0.99x |
+| Q11 | Countries Improving Most | 0.077 | 1.506 | 0.072 | 1.494 | 1.583 | 1.566 | 1.01x |
+| Q12 | Is EV Adoption Reducing $CO_2$? | 0.882 | 3.272 | 0.862 | 3.218 | 4.155 | 4.081 | 1.02x |
 
+Overall, the Data Warehouse (DW) model outperforms the standard RDBMS across most benchmarked scenarios, achieving a 1.35x total execution speedup (35.06 ms total for RDBMS vs. 26.03 ms for DW) and demonstrating faster performance in 10 out of 12 queries.
 
+The performance difference is particularly noticeable in complex analytical queries involving multiple joins and aggregations:
 
-> **Overall: DW was faster on 10 out of 12 queries. The average DW speedup across all queries was approximately 1.60×.**
+- High speedup queries (Q4, Q5, Q9): The Data Warehouse achieves significant gains, peaking at 3.43x for Q4 (Top Countries by EV Stock) and 1.95x for Q9. This improvement is primarily driven by the denormalized star schema, which minimizes costly runtime table joins.
+
+- Moderate speedup queries (Q7): Query Q7 (Infrastructure Growth) shows a 1.39x speedup, benefiting from faster scan times across structured dimensions.
+
+- Comparable queries (Q1–Q3, Q6, Q8, Q10–Q12): Lightweight queries exhibit almost identical performance (~1.00x speedup). In these cases, execution time is dominated by fixed overhead rather than scanning large volumes of data, making both architectures equally fast.
 
 ---
 
@@ -126,8 +132,7 @@ The raw results are stored in [`benchmark_results.csv`](../benchmark_results.csv
 ### 5.3 The RDBMS Win: Q6
 
 **Q6 — Pandemic Impact** is the only query where the RDBMS is clearly faster (**1.39 ms** vs **1.77 ms**). This is a very simple single-table aggregation (`AVG(ev_sales_share) GROUP BY pandemic_period`). The RDBMS stores `pandemic_period` directly in the `Year` lookup table; the DW stores it in `YearDim`. Both schemas require one join, and the slight RDBMS advantage here is likely due to the smaller number of rows in `EVSales` compared to `EVMarket` after filtering, combined with random variation.
--->
----
+
 
 ## 6. SQL Verbosity
 
@@ -148,9 +153,7 @@ Beyond speed, a secondary dimension of comparison is **how much SQL code is requ
 | Q11 | MIN/MAX aggregate | 11 | 10 | 1.1× | ≈ Similar |
 | Q12 | 3-fact JOIN | 21 | 21 | 1.0× | ≈ Similar |
 
-> **The RDBMS required on average 1.6× more SQL lines than the DW. For queries exploiting OLAP operators (Q1, Q4, Q5, Q9), the verbosity gap was significantly larger.**
-
----
+> **The RDBMS required on average 1.6× more SQL lines than the DW. For queries exploiting OLAP operators (Q1, Q4, Q5, Q9), the verbosity gap was significantly larger.** -->
 
 ## 7. Discussion
 
