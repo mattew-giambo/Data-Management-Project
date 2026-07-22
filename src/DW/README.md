@@ -13,117 +13,136 @@
 3. [Data Warehousing & Methodology](#3-data-warehousing--methodology)
 4. [Final Datasets & Attribute Dictionary](#4-final-datasets--attribute-dictionary)
 5. [OLAP Queries & Analytical Insights](#5-olap-queries--analytical-insights)
-6. [Project Structure & How to Run](#6-project-structure--how-to-run)
+6. [Project Structure](#6-project-structure)
 
 ---
 
-## 1. Project Overview & Objectives
+# 1. Project Overview & Objectives
 
-The central question driving this project is deceptively simple: **does buying an electric car actually help the planet?** The answer depends entirely on where the electricity comes from. A BEV charged on a coal-dominated grid may emit more CO₂ over its lifetime than an efficient petrol car — the emission is just invisible at the point of consumption.
+The main question behind this project is simple: **does using an electric vehicle really reduce environmental impact?** The answer depends on how the electricity is produced. If a Battery Electric Vehicle (BEV) is charged using electricity generated mainly from coal, its total CO₂ emissions during its lifetime can even be higher than those of an efficient petrol car. In this case, the emissions are not produced directly by the vehicle, but during electricity generation.
 
-This project builds a **Data Warehouse** (DW) that integrates three heterogeneous open-access datasets to investigate this question at a national level, for **50 countries** over the period **2010–2023**. The two core analytical goals defined in the project proposal are:
+To study this problem, a **Data Warehouse (DW)** was developed by integrating three different open-access datasets. The analysis covers **50 countries** from **2010 to 2023**. The project focuses on two main objectives:
 
-1. **EV Impact Assessment** — Analyse whether EV adoption leads to a net reduction in national CO₂ emissions, cross-referencing the electricity generation mix to detect the *grid-shift* effect (fossil-fuelled charging).
-2. **Economic Transition Disparity** — Compare the pace and depth of the EV transition between high-GDP and low-GDP countries, exploring whether financial capacity is a bottleneck for the energy transition.
+1. **EV Impact Assessment** – Evaluate whether the adoption of electric vehicles contributes to reducing national CO₂ emissions, considering the electricity generation mix of each country and the possible *grid-shift* effect, where electricity used for charging is mainly produced from fossil fuels.
+2. **Economic Transition Disparity** – Compare the adoption of electric vehicles in countries with different GDP levels to understand whether economic resources influence the speed of the energy transition.
 
-The DW is designed following the **Kimball dimensional modelling methodology** (Star Schema with Conformed Dimensions), enabling OLAP-style queries with `ROLLUP`, `CUBE`, and `GROUPING SETS`, as well as window functions for trend analysis.
+The Data Warehouse was first designed at the conceptual level using the **Dimensional Fact Model (DFM)** and then implemented as a **Relational OLAP (ROLAP)** Star Schema. Shared dimensions between different fact tables make it possible to perform **Drill-across** analyses. The project also supports common OLAP operations through SQL aggregation features such as `ROLLUP`, `CUBE`, `GROUPING SETS`, together with window functions for trend analysis.
 
 ---
 
-## 2. Datasets & Data Preparation
+# 2. Datasets & Data Preparation
 
-### 2.1 Source Datasets
+## 2.1 Source Datasets
 
-Three primary datasets were used, plus three auxiliary datasets added during the ETL phase to address data quality gaps discovered during profiling.
+The project uses three main datasets. During the ETL process, three additional datasets were included because data profiling revealed some missing or incomplete information that needed to be corrected.
 
-#### Primary Datasets
+### Primary Datasets
 
 | # | Name | Source | Raw Size | Granularity |
 |---|------|--------|----------|-------------|
-| 1 | **IEA Global EV Sales** (2010–2023) | International Energy Agency / Kaggle | 12,654 rows × 8 cols | `[Country, Year, Vehicle Mode, Powertrain, Parameter]` |
-| 2 | **OWID CO₂ & GHG Emissions** | Our World in Data / Global Carbon Project | 50,411 rows × 79 cols | `[Country, Year]` |
-| 3 | **OWID Energy Dataset** | Our World in Data / BP / Ember / IEA | 23,377 rows × 130 cols | `[Country, Year]` |
+| 1 | **IEA Global EV Sales** (2010–2023) | International Energy Agency / Kaggle | 12,654 rows × 8 columns | `[Country, Year, Vehicle Mode, Powertrain, Parameter]` |
+| 2 | **OWID CO₂ & GHG Emissions** | Our World in Data / Global Carbon Project | 50,411 rows × 79 columns | `[Country, Year]` |
+| 3 | **OWID Energy Dataset** | Our World in Data / BP / Ember / IEA | 23,377 rows × 130 columns | `[Country, Year]` |
 
-#### Auxiliary Datasets (added post-proposal)
+### Auxiliary Datasets
 
-These three datasets were not part of the original project proposal but became necessary to address gaps found during data profiling:
+These datasets were not included in the original project proposal. They were added after the data profiling phase because they helped solve some data quality problems.
 
 | # | Name | Source | Purpose |
 |---|------|--------|---------|
-| 4 | **World Bank GDP & Population** | World Bank Open Data | The GDP and population figures in OWID use constant 2011 PPP dollars, which made per-capita derivations inconsistent. World Bank current-USD figures were used to patch and override OWID's macroeconomic columns with a more authoritative and uniform source. |
-| 5 | **continent\_country.csv** | ISO standard lookup | The IEA dataset has no continent field. This ISO-based mapping was used to enrich the geographical dimension (`CountryDim`) with `continent` and `continentCode`, enabling continent-level roll-ups in OLAP queries. |
-| 6 | **Ember Global Electricity Generation** | Ember Climate | OWID's energy dataset has significant null rates on electricity generation metrics (up to ~70%). The Ember dataset — which covers the same metrics with broader country coverage — was used to patch those missing values before loading into the DW. |
+| 4 | **World Bank GDP & Population** | World Bank Open Data | The GDP and population values available in the OWID datasets are expressed in constant 2011 PPP dollars. This made some per-capita calculations less consistent, so the corresponding values were replaced with current USD data from the World Bank, which provides more reliable and complete information. |
+| 5 | **continent_country.csv** | ISO standard lookup | The IEA dataset does not contain information about continents. This mapping file was used to add the attributes `continent` and `continentCode` to the geographical dimension (`CountryDim`), allowing continent-level analyses. |
+| 6 | **Ember Global Electricity Generation** | Ember Climate | Several electricity generation attributes in the OWID energy dataset contain many missing values, in some cases close to 70%. The Ember dataset provides better coverage for the same indicators, so it was used to fill the missing values before loading the data into the Data Warehouse. |
 
-**Note on Dataset 4 (World Bank Development Indicators):** The original project proposal listed this dataset as optional. After profiling, we confirmed that GDP and population are already present in the OWID datasets — the World Bank dataset was therefore used only to *replace* those columns with higher-quality figures (current USD, broader coverage), not as a separate analytical source. The OWID columns themselves were sufficient as fallback.
+**Note about Dataset 4 (World Bank Development Indicators):** The original project proposal considered this dataset as optional. After the profiling phase, it was found that GDP and population were already available in the OWID datasets. For this reason, the World Bank data was not used as an additional analytical source, but only to replace the existing OWID values with more complete and up-to-date figures based on current USD. The original OWID values were kept only as a fallback when necessary.
 
 ---
 
 ### 2.2 Attribute Selection Rationale
 
-Each raw dataset was profiled before any transformation. Here is the reasoning behind what was kept and what was dropped.
+Before starting the transformation process, each dataset was analysed to decide which attributes were useful for the project and which ones could be removed.
 
-#### IEA EV Sales — kept attributes
+#### IEA EV Sales, selected attributes
 
-The raw file is in **long format** (one metric per row, stored in a `parameter` column). The relevant parameters were: `EV sales`, `EV stock`, `EV sales share`, `EV stock share`, `Electricity demand`. Two parameters — `Oil displacement Mbd` and `Oil displacement, million lge` — were **dropped**: they represent derived oil-equivalent estimates that add no independent analytical value and are not comparable across different vehicle categories.
+The IEA dataset is stored in **long format**, where each row represents a single metric identified by the `parameter` column. The parameters selected for the project are `EV sales`, `EV stock`, `EV sales share`, `EV stock share`, and `Electricity demand`.
 
-The `category` column (Historical / Projection-STEPS / Projection-APS) was used exclusively as a **filter** and then discarded: only `Historical` rows were retained, so the column itself is meaningless in the output.
+Two parameters, `Oil displacement Mbd` and `Oil displacement, million lge`, were removed because they are estimated values derived from other measures. They do not provide additional information and cannot be compared fairly across different vehicle categories.
 
-#### OWID CO₂ — kept attributes
+The `category` column, which contains the values `Historical`, `Projection-STEPS`, and `Projection-APS`, was only used to filter the data. Since only historical records were kept, this column was no longer needed and was removed.
 
-Out of 79 columns, 14 were selected. Dropped columns include: cumulative historical emissions (not relevant for year-by-year analysis), trade-adjusted consumption emissions (interesting but not needed for Task 1), and all GHG gases other than CO₂ (out of scope). The `iso_code` column — null for macro-regions like "Africa (GCP)" — was used as the primary filter to remove non-national rows.
+#### OWID CO₂, selected attributes
 
-#### OWID Energy — kept attributes
+The original dataset contains 79 columns, but only 14 were selected for the Data Warehouse.
 
-Out of 130 columns, 20 were selected. The full energy generation mix by source was kept (coal, gas, oil, nuclear, hydro, solar, wind, other renewables) because the project's core question requires knowing *how* electricity is produced, not just how much. Dropped: energy *consumption* by sector (residential, industrial, etc.), per-capita energy metrics (recalculated from scratch), and all non-electricity energy carrier details (e.g., primary energy by fuel type in EJ).
+Several attributes were removed because they were outside the scope of the project. These include cumulative historical emissions, trade-adjusted consumption emissions, and greenhouse gases other than CO₂. The `iso_code` column was used to identify and remove rows that do not represent individual countries, such as "Africa (GCP)" and other macro-regions.
+
+#### OWID Energy, selected attributes
+
+The OWID Energy dataset contains 130 columns, and 20 of them were selected.
+
+The complete electricity generation mix was kept, including coal, gas, oil, nuclear, hydro, solar, wind, and other renewable sources. These attributes are essential because the project analyses not only how much electricity is produced, but also how it is generated.
+
+The removed attributes include energy consumption by sector, per-capita energy indicators, which were recalculated later, and detailed information about non-electricity energy carriers, such as primary energy by fuel type.
 
 ---
 
 ### 2.3 Data Cleaning Process
 
-The full cleaning logic is implemented in [`src/utility/transform.py`](src/utility/transform.py). Below is a step-by-step account.
+The complete cleaning process is implemented in `src/utility/transform.py`. The main steps are described below.
 
-#### Step 1 — Removing Projections and Aligning Time Ranges
+#### Step 1, Removing Projections and Aligning Time Ranges
 
-The IEA dataset contains 3,480 rows of future projections (2020–2035, labelled `Projection-STEPS` and `Projection-APS`). These were removed by filtering `category == 'Historical'`. The OWID Energy dataset contains 106 rows for 2025 (preliminary Ember estimates). All three datasets were then clipped to `2010 ≤ year ≤ 2023`, the only range where all sources overlap with complete historical coverage.
+The IEA dataset includes 3,480 rows containing future projections for the years 2020 to 2035, labelled as `Projection-STEPS` and `Projection-APS`. These rows were removed by selecting only records where `category == 'Historical'`.
 
-#### Step 2 — Resolving Geographic Conflicts
+The OWID Energy dataset also contains 106 rows for the year 2025, based on preliminary Ember estimates. Since the three datasets overlap only between 2010 and 2023 with complete historical information, all datasets were limited to this time period.
 
-The IEA dataset does not use ISO codes and contains non-standard country names. A multi-stage matching strategy was implemented:
-1. **Exact match** against a dictionary built from OWID's `(country, iso_code)` pairs.
-2. **Cleaned match** — stripping words like "Republic of", "Kingdom of", etc. — to catch formal names.
-3. **Hardcoded special cases** (e.g., `Korea` → `South Korea`).
-4. **Fuzzy match** using `difflib.get_close_matches` with a 0.6 similarity cutoff as a last resort.
+#### Step 2, Resolving Geographic Conflicts
 
-Macro-regional rows (`World`, `Europe`, `EU27`, `Rest of the world` in IEA; all rows with `iso_code IS NULL` in OWID) were removed entirely to avoid **double-counting** in aggregate queries.
+The IEA dataset does not include ISO country codes and uses country names that are sometimes different from those used in the OWID datasets. To solve this problem, a matching procedure with several steps was implemented.
 
-#### Step 3 — Pivoting the EV Dataset (Long → Wide)
+1. An exact match was first attempted using a dictionary created from the OWID country names and ISO codes.
+2. If no match was found, country names were simplified by removing words such as "Republic of" and "Kingdom of".
+3. Some special cases were solved manually, for example mapping `Korea` to `South Korea`.
+4. As a final step, fuzzy matching was performed using `difflib.get_close_matches` with a similarity threshold of 0.6.
 
-The IEA data was pivoted from long to wide format using `pivot_table`, separating charging infrastructure (`EV charging points`) into a dedicated table (`EVInfrastructure`) to avoid granularity conflicts with vehicle market data. The resulting `EVMarket` table is indexed at `[Country, Year, Vehicle Mode, Powertrain]`.
+Rows representing macro-regions, such as `World`, `Europe`, `EU27`, and `Rest of the world` in the IEA dataset, together with all OWID rows where `iso_code` is `NULL`, were removed to avoid double-counting during aggregate analyses.
 
-#### Step 4 — Handling Missing Values
+#### Step 3, Pivoting the EV Dataset
 
-A deliberate asymmetry was applied:
-- **EV measures** (sales, stock, shares, electricity demand): `NaN` values generated by the pivot — meaning a country simply had no activity for that combination — were **imputed to `0.0`**. Zero is the semantically correct value here.
-- **Macroeconomic and energy measures** (GDP, population, CO₂, electricity generation): `NaN` values were **kept as `NULL`**. Replacing a missing GDP with zero would completely distort `AVG()` and ratio calculations in OLAP queries.
+The IEA dataset was converted from long format to wide format using `pivot_table`.
 
-#### Step 5 — Patching Energy Data with Ember
+Information about charging infrastructure (`EV charging points`) was stored in a separate table called `EVInfrastructure`. This avoids conflicts in granularity with the vehicle market data. The resulting `EVMarket` table is organised by `[Country, Year, Vehicle Mode, Powertrain]`.
 
-After cleaning, OWID's electricity generation columns still had significant null rates. A left join with the Ember dataset (filtered to `Area type == 'Country or economy'`, pivoted on `Electricity source`) was performed, and `fillna()` was applied column-by-column to patch only the missing values without overwriting existing OWID data.
+#### Step 4, Handling Missing Values
 
-#### Step 6 — Replacing GDP and Population with World Bank Data
+Different strategies were used depending on the type of data.
 
-For both `co2_clean` and `energy_clean`, the World Bank dataset (after melting and pivoting by `Series Code`) was joined on `(isoCode, year)`. The World Bank values were preferred where available; OWID values served as fallback.
+For EV indicators, including sales, stock, shares, and electricity demand, missing values created during the pivot operation were replaced with `0.0`. In these cases, a missing value simply means that no activity was recorded for that country and category.
 
-#### Step 7 — Recalculating Derived Indicators
+For macroeconomic and energy variables, such as GDP, population, CO₂ emissions, and electricity generation, missing values were kept as `NULL`. Replacing these values with zero would produce incorrect averages and ratio calculations during OLAP analyses.
 
-After replacing the population and GDP bases, ratio indicators were recalculated from scratch to ensure internal consistency:
+#### Step 5, Patching Energy Data with Ember
 
-```
+After the cleaning process, the OWID Energy dataset still contained many missing values in the electricity generation columns.
+
+To improve data completeness, the Ember dataset was filtered to keep only rows where `Area type == 'Country or economy'`. After pivoting the data by `Electricity source`, it was joined with the OWID dataset. Missing values were then filled using `fillna()`, while all existing OWID values were preserved.
+
+#### Step 6, Replacing GDP and Population with World Bank Data
+
+The World Bank dataset was transformed by melting and pivoting the data using `Series Code`.
+
+The resulting table was joined with both `co2_clean` and `energy_clean` using `(isoCode, year)`. Whenever World Bank data was available, it replaced the corresponding OWID values. If not, the original OWID values were kept.
+
+#### Step 7, Recalculating Derived Indicators
+
+After updating GDP and population values, all ratio indicators were recalculated to ensure consistency throughout the Data Warehouse.
+
+```text
 co2PerCapita = (co2Emissions × 10⁶) / population
 co2PerGDP    = (co2Emissions × 10⁹) / GDP
 ```
 
-This avoids inheriting stale ratios from the OWID source that were computed against different base figures.
+This approach guarantees that the calculated indicators are based on the updated GDP and population values instead of the original ratios provided by OWID.
 
 #### Final Validation Results
 
@@ -134,53 +153,57 @@ This avoids inheriting stale ratios from the OWID source that were computed agai
 | `clean_owid_co2.csv` | ~3,052 | 0 | 2010–2023 |
 | `clean_owid_energy.csv` | ~3,078 | 0 | 2010–2023 |
 
-100% geographic coverage: all 50 ISO codes in the EV dataset exist in both CO₂ and Energy datasets, guaranteeing referential integrity in the DW.
+The final validation confirmed complete geographic coverage. All 50 ISO codes present in the EV dataset are also available in both the CO₂ and Energy datasets, ensuring referential integrity inside the Data Warehouse.
 
 ---
 
-## 3. Data Warehousing & Methodology
+# 3. Data Warehousing & Methodology
 
-### 3.1 Design Approach
+## 3.1 Design Approach
 
-The DW was designed following the **Dimensional Fact Model (DFM)** methodology, as introduced in the course lectures. The DFM prescribes identifying fact events, their measures, and the analytical dimensions along which measures should be aggregated before committing to a physical schema.
+The Data Warehouse was designed following the **Dimensional Fact Model (DFM)** methodology. According to the DFM, the first step is to identify the facts, the measures associated with each fact, and the dimensions that are used to analyse and aggregate the data. After the conceptual design, the model can be translated into the logical schema.
 
-The key modelling decision was splitting the data across **multiple fact tables** rather than forcing everything into a single one. The reason is a well-known dimensional modelling pitfall: **fan-out** (also called the *chasm trap*). The EV Sales data has a finer granularity (`Country × Year × Vehicle Mode × Powertrain`) than the CO₂ and Energy data (`Country × Year`). A naive join would replicate each country's CO₂ value once per vehicle/powertrain combination, making any `SUM(co2)` query return inflated results by a factor equal to the number of active EV categories per country-year.
+One of the most important design choices was to use **multiple fact tables** instead of storing all the information in a single table. This decision was necessary because the datasets have different levels of granularity.
 
-The solution is the **Multi-Fact Star Schema** with **Conformed Dimensions**, the standard Kimball pattern for this problem: shared dimension tables (`CountryDim`, `YearDim`) act as the integration bridge between fact tables, and cross-fact queries are expressed as **Drill-Across** operations (separate queries joined on conformed keys).
+The EV Sales dataset is organised by `Country × Year × Vehicle Type × Powertrain`, while the CO₂ and Energy datasets are organised only by `Country × Year`. If all the data were combined into one fact table, the CO₂ and energy values would be repeated for every vehicle type and powertrain. As a result, aggregate operations such as `SUM(co2Emissions)` would produce incorrect values because the same emissions would be counted multiple times.
 
-### 3.2 Schema Design
+To avoid this problem, the Data Warehouse uses a **Multi-Fact Star Schema** with **conformed dimensions**. The shared dimensions, `CountryDim` and `YearDim`, connect the different fact tables and make it possible to analyse data coming from different sources through **drill-across** operations.
 
-The physical schema (`src/DW/init.sql`) implements a **Star Schema** with 4 dimension tables and 4 fact tables.
+## 3.2 Schema Design
+
+The logical schema, implemented in `src/DW/init.sql`, follows the **Star Schema** model. It includes four dimension tables and four fact tables.
 
 ![DFM Schema](DFM%20Schema/assets/DFM_star.png)
 
-#### Dimension Tables
+### Dimension Tables
 
 | Table | PK | Description |
 |-------|----|-------------|
-| `CountryDim` | `keyC` | Countries enriched with ISO code and continent. Acts as a conformed dimension shared by all fact tables. |
-| `YearDim` | `keyY` | Years enriched with two analytical groupings: `halfDecade` (2010–2014 / 2015–2019 / 2020–2023) and `pandemicPeriod` (Pre-Pandemic / Pandemic / Post-Pandemic). These pre-baked groupings avoid redundant `CASE WHEN` logic in every query. |
-| `VehicleTypeDim` | `keyV` | Vehicle segment: Cars, Buses, Vans, Trucks. Used only by `EVMarket`. |
-| `PowertrainDim` | `keyP` | Powertrain technology: BEV, PHEV, FCEV. Used only by `EVMarket`. |
+| `CountryDim` | `keyC` | Stores information about each country, including the ISO code and the continent. This dimension is shared by all fact tables. |
+| `YearDim` | `keyY` | Stores the year together with two additional attributes, `halfDecade` (2010–2014, 2015–2019, 2020–2023) and `pandemicPeriod` (Pre-Pandemic, Pandemic, Post-Pandemic). These attributes simplify analytical queries because they avoid repeating the same `CASE WHEN` expressions. |
+| `VehicleTypeDim` | `keyV` | Contains the vehicle categories, such as Cars, Buses, Vans, and Trucks. It is used only by the `EVMarket` fact table. |
+| `PowertrainDim` | `keyP` | Contains the powertrain technologies, including BEV, PHEV, and FCEV. It is also used only by the `EVMarket` fact table. |
 
-#### Fact Tables
+### Fact Tables
 
-| Table | Grain | Measure Type |
-|-------|-------|--------------|
-| `EVMarket` | Country × Year × Vehicle Type × Powertrain | EV sales KPIs |
-| `EVInfrastructure` | Country × Year | Charging point counts |
-| `CountryEnergy` | Country × Year | Electricity generation by source |
-| `CountryMacroeconomics` | Country × Year | CO₂ emissions + macroeconomic indicators |
+| Table | Grain | Main Measures |
+|-------|-------|---------------|
+| `EVMarket` | Country × Year × Vehicle Type × Powertrain | EV sales indicators |
+| `EVInfrastructure` | Country × Year | Charging infrastructure indicators |
+| `CountryEnergy` | Country × Year | Electricity generation by energy source |
+| `CountryMacroeconomics` | Country × Year | CO₂ emissions and macroeconomic indicators |
 
-The two infrastructure-side fact tables (`CountryEnergy`, `CountryMacroeconomics`) share only `CountryDim` and `YearDim` with `EVMarket`, avoiding any fan-out while enabling drill-across queries that connect EV adoption data with emissions and grid mix data.
+The `CountryEnergy` and `CountryMacroeconomics` tables share the `CountryDim` and `YearDim` dimensions with `EVMarket`. This design avoids duplicated values caused by different granularities and allows data from different fact tables to be analysed together using drill-across queries.
 
-### 3.3 Measure Additivity
+## 3.3 Measure Additivity
 
-Following the DFM classification discussed in class:
+According to the measure classification introduced in the DFM methodology, the measures in the Data Warehouse can be divided into three groups.
 
-- **Flow Measures** (fully additive over all dimensions): `evSales`, `evElectricityDemand`, `co2Emissions`, `co2EmissionsOil`, `co2EmissionsCoal`, `electricityGeneration`, `renewableElectricityGeneration`, etc.
-- **Level Measures** (additive across space, non-additive over time): `evStock`, `evChargingPoints`, `population`, `GDP`. Summing the stock of EVs in 2020 and 2021 makes no sense; summing the stocks of Germany and France does.
-- **Unit Measures** (non-additive, ratio-based): `evSalesShare`, `evStockShare`, `co2PerCapita`, `co2PerGDP`. These must be aggregated with `AVG`, `MIN`, or `MAX` — never `SUM`.
+**Flow measures** are fully additive across all dimensions. Examples include `evSales`, `evElectricityDemand`, `co2Emissions`, `co2EmissionsOil`, `co2EmissionsCoal`, `electricityGeneration`, and `renewableElectricityGeneration`.
+
+**Level measures** can be added across different countries, but they should not be summed over time. This group includes `evStock`, `evChargingPoints`, `population`, and `GDP`. For example, adding the EV stock of Germany and France for the same year is correct, while adding the EV stock of 2020 and 2021 is not meaningful.
+
+**Unit measures** are calculated as ratios, so they are not additive. This category includes `evSalesShare`, `evStockShare`, `co2PerCapita`, and `co2PerGDP`. These measures should be analysed using aggregation functions such as `AVG`, `MIN`, or `MAX`, and not with `SUM`.
 
 ---
 
@@ -494,124 +517,52 @@ ORDER BY c.country, y.year;
 
 ---
 
-## 6. Project Structure & How to Run
+## 6. Project Structure
 
 ### 6.1 Repository Map
 
 ```
 Data-Management-Project/
 │
-├── raw_datasets/                   # Original, unmodified source files
+├── raw_datasets/                   
 │   ├── iea-global-ev-sales.csv
 │   ├── owid-co2-data.csv
 │   ├── owid-energy-data.csv
-│   ├── continent_country.csv       # ISO continent mapping (auxiliary)
-│   ├── gdp_population_countries.csv  # World Bank GDP + pop (auxiliary)
-│   └── release_generation_yearly_global.csv  # Ember electricity data (auxiliary)
+│   ├── continent_country.csv       
+│   ├── gdp_population_countries.csv  
+│   └── release_generation_yearly_global.csv  
 │
-├── clean_datasets/                 # ETL output — ready for DW import
+├── clean_datasets/                 
 │   ├── clean_iea_ev_sales.csv
 │   ├── clean_iea_ev_infrastructure.csv
 │   ├── clean_owid_co2.csv
 │   └── clean_owid_energy.csv
 │
 ├── src/
-│   ├── etl.py                      # Main entry point: orchestrates Extract → Transform → Load → DB Insert
+│   ├── etl.py                      
 │   └── utility/
-│       ├── extract.py              # Reads all raw CSVs from raw_datasets/
-│       ├── transform.py            # All cleaning, pivoting, patching, renaming logic
-│       ├── load.py                 # Saves clean CSVs + prints validation summary
-│       └── db_loader.py            # Inserts data into PostgreSQL (dimension + fact tables)
+│       ├── extract.py              
+│       ├── transform.py            
+│       ├── load.py                 
+│       └── db_loader.py            
 │
 ├── src/DW/
-│   ├── init.sql                    # Creates the GREEN_MOBILITY database schema
-│   └── olap.sql                    # All 12 OLAP queries
+│   ├── init.sql                    
+│   └── olap.sql                    
 │
 ├── DFM Schema/
-│   ├── DFM_star.excalidraw         # Editable DFM diagram source (Excalidraw)
+│   ├── DFM_star.excalidraw         
 │   └── assets/
-│       ├── DFM.png                 # Conceptual DFM diagram
-│       ├── DFM_star.png            # Final Star Schema diagram
-│       └── star.png                # Simplified star schema overview
+│       ├── DFM.png                 
+│       ├── DFM_star.png            
+│       └── star.png               
 │
-├── datasets_presentation.md        # Detailed data profiling report (Italian)
-├── data_profiling_and_cleaning_report.md  # Data cleaning log (Italian)
-└── README.md                       # This file
+├── datasets_presentation.md        
+├── data_profiling_and_cleaning_report.md  
+└── README.md                       
 ```
 
 > **Note:** The `src/RDBMS/` directory is not part of Task 1 and is not documented here.
 
 ---
 
-### 6.2 Prerequisites
-
-- Python ≥ 3.9
-- PostgreSQL ≥ 14 (running locally or via Docker)
-- Python packages: `pandas`, `psycopg2-binary`, `numpy`
-
-```bash
-pip install pandas psycopg2-binary numpy
-```
-
-### 6.3 Running the ETL Pipeline
-
-**Step 1 — Initialise the database schema**
-
-Connect to your PostgreSQL instance and run the schema creation script:
-
-```bash
-psql -U postgres -f src/DW/init.sql
-```
-
-This creates the `GREEN_MOBILITY` database with all dimension and fact tables.
-
-**Step 2 — Run the full ETL pipeline**
-
-From the project root:
-
-```bash
-cd src
-python etl.py
-```
-
-This will:
-1. Extract all raw datasets from `raw_datasets/`
-2. Clean, transform, and pivot the data
-3. Save the four clean CSVs to `clean_datasets/`
-4. Insert all data into the PostgreSQL database
-
-**Step 3 — CSV-only mode** (skip database insertion)
-
-If you only need the clean CSV files without a running PostgreSQL instance:
-
-```python
-from utility import extract, transform, load
-
-ev, co2, energy, cont, gdp_pop, ember = extract.extract_data()
-ev_c, infra_c, co2_c, energy_c = transform.transform_data(ev, co2, energy, cont, gdp_pop, ember)
-load.load_data(ev_c, infra_c, co2_c, energy_c)
-```
-
-Or equivalently, call `run_etl(skip_db=True)` from `etl.py`.
-
-**Step 4 — Run OLAP queries**
-
-```bash
-psql -U postgres -d green_mobility -f src/DW/olap.sql
-```
-
-### 6.4 Database Connection Defaults
-
-The ETL uses the following defaults (configurable via `run_etl()` parameters):
-
-| Parameter | Default |
-|-----------|---------|
-| Host | `localhost` |
-| Port | `5432` |
-| Database | `green_mobility` |
-| User | `postgres` |
-| Password | `postgres` |
-
----
-
-*Project developed for the Data Management course — MSc in Computer Science.*
