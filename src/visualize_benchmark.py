@@ -105,7 +105,7 @@ def chart_exec_time(df: pd.DataFrame, out: Path):
         x            = df["query_id"].tolist(),
         left_vals    = df["rdbms_exec_ms"].values,
         right_vals   = df["dw_exec_ms"].values,
-        left_label   = "RDBMS (3NF)",
+        left_label   = "RDBMS",
         right_label  = "Data Warehouse (Star Schema)",
         left_color   = RDBMS_COLOR,
         right_color  = DW_COLOR,
@@ -127,7 +127,7 @@ def chart_plan_time(df: pd.DataFrame, out: Path):
         x            = df["query_id"].tolist(),
         left_vals    = df["rdbms_plan_ms"].values,
         right_vals   = df["dw_plan_ms"].values,
-        left_label   = "RDBMS (3NF)",
+        left_label   = "RDBMS",
         right_label  = "Data Warehouse (Star Schema)",
         left_color   = RDBMS_COLOR,
         right_color  = DW_COLOR,
@@ -143,27 +143,19 @@ def chart_plan_time(df: pd.DataFrame, out: Path):
 # ---------------------------------------------------------------------------
 
 def chart_speedup(df: pd.DataFrame, out: Path):
-    df_sorted = df.sort_values("speedup", ascending=True)
-
     fig, ax = plt.subplots(figsize=(9, 6))
-    colors = [DW_COLOR if v >= 1 else RDBMS_COLOR for v in df_sorted["speedup"]]
-    bars = ax.barh(df_sorted["query_id"], df_sorted["speedup"],
-                   color=colors, alpha=0.88, zorder=3)
-    ax.axvline(1.0, color="black", linewidth=1.2, linestyle="--",
-               label="Break-even (1×)")
+    colors = [DW_COLOR if v >= 1 else RDBMS_COLOR for v in df["speedup"]]
+    bars = ax.barh(df["query_id"], df["speedup"],
+                   color=colors, alpha=0.90, zorder=3)
+    ax.axvline(1.0, color="black", linewidth=1.2, linestyle="--", alpha=0.5)
 
-    for bar, val in zip(bars, df_sorted["speedup"]):
+    ax.invert_yaxis()
+
+    for bar, val in zip(bars, df["speedup"]):
         offset = 0.03 if val >= 0 else -0.03
-        ha = "left" if val >= 1 else "right"
         ax.text(val + offset, bar.get_y() + bar.get_height() / 2,
-                f"{val:.2f}×", va="center", ha=ha, fontsize=9, fontweight="bold",
+                f"{val:.2f}x", va="center", ha="left", fontsize=9, fontweight="bold",
                 color=DW_COLOR if val >= 1 else RDBMS_COLOR)
-
-    xmax = df_sorted["speedup"].max()
-    ax.text(xmax * 0.97, len(df_sorted) - 0.6, "DW faster →",
-            ha="right", va="top", color=DW_COLOR, fontsize=9, style="italic")
-    ax.text(1.03, 0.2, "← RDBMS faster",
-            ha="left", va="bottom", color=RDBMS_COLOR, fontsize=9, style="italic")
 
     ax.set_xlabel("Speedup factor  (RDBMS total ms / DW total ms)")
     ax.set_title("Chart 3 — DW Speedup over RDBMS (total time)",
@@ -184,7 +176,7 @@ def chart_stacked(df: pd.DataFrame, out: Path):
 
     for (label, plan_col, exec_col, color), ax in zip(
         [
-            ("RDBMS (3NF)",             "rdbms_plan_ms", "rdbms_exec_ms", RDBMS_COLOR),
+            ("RDBMS (OLTP)",             "rdbms_plan_ms", "rdbms_exec_ms", RDBMS_COLOR),
             ("Data Warehouse (OLAP)",   "dw_plan_ms",    "dw_exec_ms",    DW_COLOR),
         ],
         axes,
@@ -204,15 +196,10 @@ def chart_stacked(df: pd.DataFrame, out: Path):
         ax.legend(frameon=False)
         ax.grid(axis="y", alpha=0.4, zorder=0)
 
-    fig.suptitle("Chart 4 — Planning vs Execution Time Breakdown",
+    fig.suptitle("Chart 4 — DBMS vs DW Total Time",
                  fontweight="bold", fontsize=13, y=1.02)
     fig.tight_layout()
     _save(fig, out)
-
-
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
 
 def main():
     parser = argparse.ArgumentParser(
@@ -245,11 +232,7 @@ def main():
     chart_speedup   (df, figures_dir / "03_speedup.png")
     chart_stacked   (df, figures_dir / "04_time_breakdown.png")
 
-    print(f"\nDone. Charts saved in: {figures_dir}")
-    print("  01_execution_time.png — execution time per query")
-    print("  02_planning_time.png  — planning time per query")
-    print("  03_speedup.png        — DW speedup factor")
-    print("  04_time_breakdown.png — planning vs execution stacked\n")
+    print(f"\nCharts saved in: {figures_dir}")
 
 
 if __name__ == "__main__":

@@ -80,7 +80,7 @@ All queries were benchmarked using the Python script [`benchmark.py`](../benchma
 - **Execution time** (ms): time the engine spent actually executing the plan;
 - **Total time** (ms): sum of planning and execution time.
 
-Each query was ran **3 times** on both databases. The reported table are the **average** of the three measured runs.
+Each query was ran **5 times** on both databases. The reported table are the **average** of the three measured runs.
 
 ### 4.2 Results
 

@@ -1,13 +1,13 @@
-query_id,label,olap_feature,rdbms_lines,dw_lines,lines_ratio,rdbms_exec_ms,dw_exec_ms,rdbms_plan_ms,dw_plan_ms,rdbms_total_ms,dw_total_ms,rdbms_seq_scans,dw_seq_scans,rdbms_joins,dw_joins,rdbms_agg_nodes,dw_agg_nodes
-Q1,EV Sales (Continent × Year),ROLLUP,23,16,1.4,3.375,3.557,0.397,0.213,3.771,3.77,6.0,4.0,3.0,1.0,3.0,2.0
-Q2,Renewable Electricity vs CO₂,Multi-fact JOIN,12,12,1.0,5.08,4.592,0.47,0.505,5.55,5.097,4.0,4.0,3.0,3.0,0.0,0.0
-Q3,Rich vs Poor Countries,CASE + GROUP BY,15,15,1.0,3.757,3.522,0.247,0.307,4.003,3.828,3.0,3.0,2.0,2.0,1.0,1.0
-Q4,Top Countries by EV Stock,RANK() window fn,21,12,1.8,9.747,2.406,0.219,0.185,9.966,2.591,3.0,3.0,2.0,2.0,2.0,1.0
-Q5,Vehicle Type Analysis,CUBE,31,9,3.4,6.527,2.447,0.329,0.417,6.855,2.864,8.0,3.0,4.0,2.0,4.0,1.0
-Q6,Pandemic Impact,Simple GROUP BY,7,6,1.2,1.302,1.687,0.092,0.082,1.393,1.769,2.0,2.0,1.0,1.0,1.0,1.0
-Q7,Infrastructure Growth,LAG() window fn,22,16,1.4,0.562,0.543,0.209,0.158,0.771,0.701,3.0,2.0,3.0,2.0,0.0,0.0
-Q8,Green Elec & High EV Demand,Multi-fact + WHERE,15,15,1.0,0.659,0.602,0.469,0.434,1.128,1.036,1.0,1.0,3.0,3.0,1.0,1.0
-Q9,Continent × Pandemic Period,GROUPING SETS,31,13,2.4,4.227,2.649,0.256,0.257,4.483,2.906,8.0,3.0,4.0,2.0,4.0,1.0
-Q10,Renewable Share %,Arithmetic ratio,13,13,1.0,3.827,3.062,0.248,0.193,4.075,3.254,3.0,3.0,2.0,2.0,0.0,0.0
-Q11,Countries Improving Most,MIN/MAX aggregate,11,10,1.1,2.385,2.094,0.23,0.329,2.614,2.424,3.0,3.0,2.0,2.0,1.0,1.0
-Q12,Is EV Adoption Reducing CO₂?,3-fact JOIN,21,21,1.0,5.076,4.85,1.138,1.827,6.214,6.678,0.0,0.0,4.0,4.0,1.0,1.0
+query_id,label,rdbms_exec_ms,dw_exec_ms,rdbms_plan_ms,dw_plan_ms,rdbms_total_ms,dw_total_ms
+Q1,EV Sales (Continent x Year),2.589,3.01,0.201,0.107,2.791,3.117
+Q2,Renewable Electricity vs CO2,3.286,3.125,0.383,0.321,3.669,3.446
+Q3,Rich vs Poor Countries,2.492,2.404,0.115,0.119,2.607,2.523
+Q4,Top Countries by EV Stock,6.845,1.911,0.096,0.074,6.941,1.985
+Q5,Vehicle Type Analysis,3.308,1.76,0.12,0.057,3.427,1.817
+Q6,Pandemic Impact,0.974,0.998,0.028,0.027,1.003,1.025
+Q7,Infrastructure Growth,0.443,0.351,0.144,0.067,0.587,0.418
+Q8,Green Elec & High EV Demand,0.417,0.411,0.306,0.304,0.723,0.715
+Q9,Continent x Pandemic Period,3.417,1.766,0.157,0.065,3.574,1.831
+Q10,Renewable Share %,2.426,2.441,0.078,0.081,2.504,2.521
+Q11,Countries Improving Most,1.497,1.529,0.07,0.065,1.567,1.594
+Q12,Is EV Adoption Reducing CO2?,3.216,3.088,0.865,0.855,4.08,3.942
