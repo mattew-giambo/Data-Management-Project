@@ -9,16 +9,12 @@ Queries are hardcoded from:
   - src/RDBMS/sql/oltp.sql   (RDBMS / relational queries)
 
 Metrics collected per query:
-  - Planning time      (from EXPLAIN ANALYZE)
-  - Execution time     (from EXPLAIN ANALYZE)
-  - Total time         (planning + execution)
-  - SQL lines          (non-blank, non-comment lines — verbosity)
-  - Seq Scan nodes     (from the query plan)
-  - JOIN nodes         (Hash Join / Nested Loop / Merge Join)
-  - Aggregation nodes  (Aggregate / GroupAggregate / HashAggregate)
+  - Planning time   (ms)
+  - Execution time  (ms)
+  - Total time      (ms)  ← planning + execution
 
 Output:
-  - Formatted tables printed to stdout
+  - Formatted table printed to stdout
   - src/benchmark_results.csv
 
 Usage
@@ -562,19 +558,6 @@ OLAP_FEATURE = {
 }
 
 
-def _count_sql_lines(sql: str) -> int:
-    """Count non-blank, non-comment lines in a SQL string."""
-    return sum(
-        1 for line in sql.splitlines()
-        if line.strip() and not line.strip().startswith("--")
-    )
-
-
-# Precompute verbosity counts once
-RDBMS_LINES = {qid: _count_sql_lines(sql) for qid, sql in RDBMS_QUERIES.items()}
-DW_LINES    = {qid: _count_sql_lines(sql) for qid, sql in DW_QUERIES.items()}
-
-
 # ============================================================
 # PostgreSQL helpers
 # ============================================================
@@ -599,15 +582,12 @@ def _parse_explain(lines: list) -> dict:
     text = "\n".join(lines)
     exec_m = re.search(r"Execution Time:\s*([\d.]+)\s*ms", text)
     plan_m = re.search(r"Planning Time:\s*([\d.]+)\s*ms",  text)
+    exec_ms = float(exec_m.group(1)) if exec_m else 0.0
+    plan_ms = float(plan_m.group(1)) if plan_m else 0.0
     return {
-        "execution_ms": float(exec_m.group(1)) if exec_m else 0.0,
-        "planning_ms":  float(plan_m.group(1)) if plan_m else 0.0,
-        "total_ms":     (float(exec_m.group(1)) if exec_m else 0.0)
-                      + (float(plan_m.group(1)) if plan_m else 0.0),
-        "seq_scans":  len(re.findall(r"Seq Scan",                         text)),
-        "index_scans":len(re.findall(r"Index (?:Only )?Scan",             text)),
-        "join_nodes": len(re.findall(r"Hash Join|Nested Loop|Merge Join", text)),
-        "agg_nodes":  len(re.findall(r"(?:Hash)?Aggregate|GroupAggregate",text)),
+        "execution_ms": exec_ms,
+        "planning_ms":  plan_ms,
+        "total_ms":     exec_ms + plan_ms,
     }
 
 
@@ -661,24 +641,15 @@ def run_benchmark(rdbms_conn, dw_conn, warmup_runs=1, measured_runs=3) -> list:
         print(f" RDBMS {r_t:7.2f}ms  DW {d_t:7.2f}ms  → {winner} ({speedup})")
 
         results.append({
-            "query_id":        qid,
-            "label":           label,
-            "olap_feature":    feature,
-            "rdbms_lines":     RDBMS_LINES[qid],
-            "dw_lines":        DW_LINES[qid],
-            "lines_ratio":     round(RDBMS_LINES[qid] / max(DW_LINES[qid], 1), 1),
-            "rdbms_exec_ms":   round(rm.get("execution_ms", 0), 3),
-            "dw_exec_ms":      round(dm.get("execution_ms", 0), 3),
-            "rdbms_plan_ms":   round(rm.get("planning_ms",  0), 3),
-            "dw_plan_ms":      round(dm.get("planning_ms",  0), 3),
-            "rdbms_total_ms":  round(r_t if r_t != float("inf") else 0, 3),
-            "dw_total_ms":     round(d_t if d_t != float("inf") else 0, 3),
-            "rdbms_seq_scans": rm.get("seq_scans"),
-            "dw_seq_scans":    dm.get("seq_scans"),
-            "rdbms_joins":     rm.get("join_nodes"),
-            "dw_joins":        dm.get("join_nodes"),
-            "rdbms_agg_nodes": rm.get("agg_nodes"),
-            "dw_agg_nodes":    dm.get("agg_nodes"),
+            "query_id":       qid,
+            "label":          label,
+            "olap_feature":   feature,
+            "rdbms_exec_ms":  round(rm.get("execution_ms", 0), 3),
+            "dw_exec_ms":     round(dm.get("execution_ms", 0), 3),
+            "rdbms_plan_ms":  round(rm.get("planning_ms",  0), 3),
+            "dw_plan_ms":     round(dm.get("planning_ms",  0), 3),
+            "rdbms_total_ms": round(r_t if r_t != float("inf") else 0, 3),
+            "dw_total_ms":    round(d_t if d_t != float("inf") else 0, 3),
         })
 
     return results
@@ -694,59 +665,27 @@ def print_report(results: list):
     print(f"\n{'='*W}")
     print("  BENCHMARK: RDBMS (3NF)  vs  Data Warehouse (Star Schema + OLAP)")
     print(f"{'='*W}")
-
-    # ① Timing
-    print("\n  ① EXECUTION TIME  (average over measured runs, ms)\n")
+    print("\n  EXECUTION TIME  (average over measured runs, ms)\n")
     print(f"  {'ID':<4} {'OLAP Feature':<18} {'RDBMS exec':>11} {'DW exec':>9} "
-          f"{'RDBMS total':>12} {'DW total':>9} {'Winner':>8} {'Speedup':>8}")
-    print("  " + "─" * 90)
+          f"{'RDBMS plan':>11} {'DW plan':>8} {'RDBMS total':>12} {'DW total':>9} {'Winner':>8} {'Speedup':>8}")
+    print("  " + "─" * 105)
     for r in results:
         r_t = r["rdbms_total_ms"]; d_t = r["dw_total_ms"]
         winner  = "DW" if d_t < r_t else ("RDBMS" if r_t < d_t else "TIE")
         speedup = f"{r_t/d_t:.2f}x" if d_t > 0 else "N/A"
         print(f"  {r['query_id']:<4} {r['olap_feature']:<18} "
               f"{r['rdbms_exec_ms']:>11.3f} {r['dw_exec_ms']:>9.3f} "
+              f"{r['rdbms_plan_ms']:>11.3f} {r['dw_plan_ms']:>8.3f} "
               f"{r_t:>12.3f} {d_t:>9.3f}  {'→ '+winner:<8} {speedup:>8}")
 
-    # ② Verbosity
-    print("\n\n  ② SQL VERBOSITY  (non-blank, non-comment lines)\n")
-    print(f"  {'ID':<4} {'OLAP Feature':<18} {'RDBMS':>8} {'DW':>6} {'Ratio':>7}  Note")
-    print("  " + "─" * 90)
-    for r in results:
-        ratio = r["lines_ratio"]
-        note  = ("★ RDBMS much more verbose"   if ratio >= 3   else
-                 "△ RDBMS moderately verbose"   if ratio >= 1.5 else
-                 "≈ similar complexity")
-        print(f"  {r['query_id']:<4} {r['olap_feature']:<18} "
-              f"{r['rdbms_lines']:>8} {r['dw_lines']:>6} {ratio:>7.1f}x  {note}")
-
-    # ③ Plan complexity
-    print("\n\n  ③ QUERY PLAN NODES\n")
-    print(f"  {'ID':<4} {'OLAP Feature':<18} "
-          f"{'RDBMS joins':>12} {'DW joins':>9} "
-          f"{'RDBMS agg':>10} {'DW agg':>7} "
-          f"{'RDBMS scans':>12} {'DW scans':>9}")
-    print("  " + "─" * 90)
-    for r in results:
-        print(f"  {r['query_id']:<4} {r['olap_feature']:<18} "
-              f"{str(r['rdbms_joins']):>12} {str(r['dw_joins']):>9} "
-              f"{str(r['rdbms_agg_nodes']):>10} {str(r['dw_agg_nodes']):>7} "
-              f"{str(r['rdbms_seq_scans']):>12} {str(r['dw_seq_scans']):>9}")
-
-    # ④ Summary
     valid = [r for r in results if r["rdbms_total_ms"] and r["dw_total_ms"]]
     dw_wins    = sum(1 for r in valid if r["dw_total_ms"]    < r["rdbms_total_ms"])
     rdbms_wins = sum(1 for r in valid if r["rdbms_total_ms"] < r["dw_total_ms"])
     avg_sp     = (sum(r["rdbms_total_ms"] / r["dw_total_ms"]
                       for r in valid if r["dw_total_ms"] > 0) / len(valid)) if valid else 0
-    avg_ratio  = sum(r["lines_ratio"] for r in results) / len(results)
 
-    print(f"\n\n  ④ SUMMARY\n")
-    print(f"  Queries benchmarked        : {len(results)}")
-    print(f"  DW faster                  : {dw_wins} / {len(valid)}")
-    print(f"  RDBMS faster               : {rdbms_wins} / {len(valid)}")
-    print(f"  Avg DW speedup             : {avg_sp:.2f}x over RDBMS")
-    print(f"  Avg RDBMS verbosity ratio  : {avg_ratio:.1f}x more SQL lines than DW")
+    print(f"\n  Queries: {len(results)}  |  DW faster: {dw_wins}/{len(valid)}  |  "
+          f"RDBMS faster: {rdbms_wins}/{len(valid)}  |  Avg DW speedup: {avg_sp:.2f}x")
     print(f"\n{'='*W}\n")
 
 
