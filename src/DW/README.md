@@ -46,15 +46,15 @@ The project uses three main datasets. During the ETL process, three additional d
 
 ### Auxiliary Datasets
 
-These datasets were not included in the original project proposal. They were added after the data profiling phase because they helped solve some data quality problems.
+These datasets were not included in the original project proposal. They were added after the data analysis phase because they helped solve some data quality problems.
 
 | # | Name | Source | Purpose |
 |---|------|--------|---------|
 | 4 | **World Bank GDP & Population** | World Bank Open Data | The GDP and population values available in the OWID datasets are expressed in constant 2011 PPP dollars. This made some per-capita calculations less consistent, so the corresponding values were replaced with current USD data from the World Bank, which provides more reliable and complete information. |
-| 5 | **continent_country.csv** | ISO standard lookup | The IEA dataset does not contain information about continents. This mapping file was used to add the attributes `continent` and `continentCode` to the geographical dimension (`CountryDim`), allowing continent-level analyses. |
-| 6 | **Ember Global Electricity Generation** | Ember Climate | Several electricity generation attributes in the OWID energy dataset contain many missing values, in some cases close to 70%. The Ember dataset provides better coverage for the same indicators, so it was used to fill the missing values before loading the data into the Data Warehouse. |
+| 5 | **continent_country.csv** | ISO standard lookup<br>https://gist.github.com/20a69c0b6d2ff846ea5d35e5fc47f26c.git| The IEA dataset does not contain information about continents. This mapping file was used to add the attributes `continent` and `continentCode` to the geographical dimension (`CountryDim`), allowing continent-level analyses. |
+| 6 | **Ember Global Electricity Generation** | Ember Climate<br>https://ember-energy.org/data/yearly-electricity-data/ | Several electricity generation attributes in the OWID energy dataset contain many missing values. The Ember dataset provides better coverage for the same indicators, so it was used to fill the missing values before loading the data into the Data Warehouse. |
 
-**Note about Dataset 4 (World Bank Development Indicators):** The original project proposal considered this dataset as optional. After the profiling phase, it was found that GDP and population were already available in the OWID datasets. For this reason, the World Bank data was not used as an additional analytical source, but only to replace the existing OWID values with more complete and up-to-date figures based on current USD. The original OWID values were kept only as a fallback when necessary.
+**Note about Dataset 4 (World Bank Development Indicators):** The original project proposal considered this dataset. After the analysis phase, it was found that GDP and population were already available in the OWID datasets. For this reason, the World Bank data was not used as an additional source, but only to replace the existing OWID values with more complete and up-to-date data.
 
 ---
 
@@ -173,7 +173,7 @@ To avoid this problem, the Data Warehouse uses a **Multi-Fact Star Schema** with
 
 The logical schema, implemented in `src/DW/init.sql`, follows the **Star Schema** model. It includes four dimension tables and four fact tables.
 
-![DFM Schema](DFM%20Schema/assets/DFM_star.png)
+![DFM Schema](../../DFM%20Schema/assets/DFM.png)
 
 ### Dimension Tables
 
@@ -191,7 +191,7 @@ The logical schema, implemented in `src/DW/init.sql`, follows the **Star Schema*
 | `EVMarket` | Country × Year × Vehicle Type × Powertrain | EV sales indicators |
 | `EVInfrastructure` | Country × Year | Charging infrastructure indicators |
 | `CountryEnergy` | Country × Year | Electricity generation by energy source |
-| `CountryMacroeconomics` | Country × Year | CO₂ emissions and macroeconomic indicators |
+| `CountryMacroeconomics` | Country × Year | $CO_2$ emissions and macroeconomic indicators |
 
 The `CountryEnergy` and `CountryMacroeconomics` tables share the `CountryDim` and `YearDim` dimensions with `EVMarket`. This design avoids duplicated values caused by different granularities and allows data from different fact tables to be analysed together using drill-across queries.
 
@@ -314,7 +314,7 @@ All queries are in [`src/DW/olap.sql`](src/DW/olap.sql) and run against the `GRE
 
 ---
 
-### Query 1 — EV Sales by Continent and Year `[ROLL-UP]`
+### Query 1 - EV Sales by Continent and Year `[ROLL-UP]`
 
 ```sql
 SELECT
@@ -329,11 +329,11 @@ GROUP BY ROLLUP(cont.continent, y.year)
 ORDER BY cont.continent, y.year;
 ```
 
-**Analytical value:** Uses `ROLLUP` to produce a three-level hierarchy: individual years per continent → continent subtotals → global grand total. The `CROSS JOIN` + `LEFT JOIN` pattern ensures that continent-year combinations with zero sales still appear in the result (no silent data gaps). This query answers: *which continents are leading the EV transition, and how has the pace changed over time?*
+ Uses `ROLLUP` to produce a three-level hierarchy: individual years per continent $\rightarrow$ continent subtotals $\rightarrow$ global grand total. The `CROSS JOIN` + `LEFT JOIN` pattern ensures that continent-year combinations with zero sales still appear in the result. This query answers: *which continents are leading the EV transition, and how has the pace changed over time?*
 
 ---
 
-### Query 2 — Renewable Electricity vs. CO₂ Emissions
+### Query 2 - Renewable Electricity vs. $CO_2$ Emissions
 
 ```sql
 SELECT
@@ -346,12 +346,11 @@ JOIN CountryDim c ON ce.keyC = c.keyC
 JOIN YearDim y ON ce.keyY = y.keyY
 ORDER BY y.year, ce.renewableElectricityGeneration DESC;
 ```
-
-**Analytical value:** A foundational Drill-Across query joining `CountryEnergy` and `CountryMacroeconomics` through conformed dimensions. Produces the raw data for a scatter plot or correlation analysis: *are countries with more renewable electricity producing less CO₂?* This is the direct empirical test of the project's core hypothesis.
+ A foundational Drill-Across query joining `CountryEnergy` and `CountryMacroeconomics` through dimensions. It answer the question: *are countries with more renewable electricity producing less $CO_2$?*
 
 ---
 
-### Query 3 — GDP Class vs. EV Adoption
+### Query 3 - GDP Class vs EV Adoption
 
 ```sql
 SELECT
@@ -369,11 +368,11 @@ GROUP BY y.year, GDP_class
 ORDER BY y.year, GDP_class;
 ```
 
-**Analytical value:** Addresses objective 2 directly: *do richer countries have higher EV market penetration?* GDP is bucketed into three tiers and `AVG(evSalesShare)` — correctly using `AVG` on a unit measure — is computed per tier per year. The trend in the gap between tiers over time reveals whether the economic disparity is narrowing or widening.
+Addresses objective 2 directly: *do richer countries have higher EV market penetration?* GDP is bucketed into three groups and `AVG(evSalesShare)` - correctly using `AVG` on a unit measure - is computed per tier per year. The trend in the gap between tiers over time reveals whether the economic disparity is narrowing or widening.
 
 ---
 
-### Query 4 — Country Ranking by EV Stock `[WINDOW FUNCTION]`
+### Query 4 - Country Ranking by EV Stock `[WINDOW FUNCTION]`
 
 ```sql
 SELECT
@@ -385,12 +384,11 @@ JOIN CountryDim c ON m.keyC = c.keyC
 JOIN YearDim y ON m.keyY = y.keyY
 GROUP BY y.year, c.country;
 ```
-
-**Analytical value:** Uses `RANK()` partitioned by year to produce annual leader-boards. Tracking rank movements over 2010–2023 shows how the competitive landscape has shifted — China's rise, Norway's early dominance, and the recent surge of Central European nations all become immediately visible.
+ Uses `RANK()` partitioned by year to produce annual leader-boards. Tracking rank movements over 2010–2023 shows how the competitive landscape has shifted.
 
 ---
 
-### Query 5 — Vehicle Type × Powertrain Cross-Analysis `[CUBE]`
+### Query 5 - Vehicle Type x Powertrain Cross-Analysis `[CUBE]`
 
 ```sql
 SELECT
@@ -402,12 +400,11 @@ JOIN PowertrainDim p ON m.keyP = p.keyP
 GROUP BY CUBE(v.vehicleType, p.powertrain)
 ORDER BY v.vehicleType, p.powertrain;
 ```
-
-**Analytical value:** `CUBE` generates all possible subtotal combinations: per vehicle type, per powertrain, per combination, and the global total — in a single pass. Answers *which segment is driving EV adoption?* (passenger BEVs dominate, but the truck and bus segments are analytically interesting for fleet electrification policy discussions).
+ `CUBE` generates all possible subtotal combinations: per vehicle type, per powertrain, per combination, and the global total - in a single pass. Answers *which segment is driving EV adoption?*.
 
 ---
 
-### Query 6 — Pandemic Impact on EV Adoption
+### Query 6 - Pandemic Impact on EV Adoption
 
 ```sql
 SELECT
@@ -418,11 +415,11 @@ JOIN YearDim y ON m.keyY = y.keyY
 GROUP BY y.pandemicPeriod;
 ```
 
-**Analytical value:** Exploits the pre-baked `pandemicPeriod` attribute in `YearDim` to group data without any `CASE WHEN` logic. The result directly answers whether COVID-19 disrupted or accelerated EV market share growth — a clean, reproducible benchmark of the pandemic's net effect on the energy transition.
+ Exploits the `pandemicPeriod` attribute in `YearDim` to group data. The result directly answers whether COVID-19 disrupted or accelerated EV market share growth - a clean, reproducible benchmark of the pandemic's net effect on the energy transition.
 
 ---
 
-### Query 7 — Charging Infrastructure Growth `[LAG Window Function]`
+### Query 7 - Charging Infrastructure Growth `[LAG Window Function]`
 
 ```sql
 SELECT
@@ -434,11 +431,11 @@ JOIN CountryDim c ON i.keyC = c.keyC
 JOIN YearDim y ON i.keyY = y.keyY;
 ```
 
-**Analytical value:** `LAG()` computes year-over-year absolute growth of charging points per country. This is more informative than raw totals because it exposes inflection points — countries that massively accelerated deployment in a specific year (often correlated with government incentive programmes).
+`LAG()` computes year-over-year absolute growth of charging points per country. This is more informative than raw totals because it exposes inflection points - countries that massively accelerated deployment in a specific year.
 
 ---
 
-### Query 8 — EV Demand vs. Grid Mix
+### Query 8 - EV Demand vs Energy Mix
 
 ```sql
 SELECT
@@ -455,11 +452,11 @@ GROUP BY c.country, y.year
 ORDER BY c.country, y.year;
 ```
 
-**Analytical value:** `MAX()` is used on level measures (generation totals) to avoid inflating them via the many-to-one join with `EVMarket`. This query produces the core dataset for the grid-shift analysis: countries with high `evElectricityDemand` but also high `fossilElectricityGeneration` are candidates for net-negative environmental impact from EV charging.
+ `MAX()` is used on level measures (generation totals). This query highlights countries with high `evElectricityDemand` but also high `fossilElectricityGeneration` are candidates for net-negative environmental impact from EV charging.
 
 ---
 
-### Query 9 — Continent × Pandemic Period Sales `[GROUPING SETS]`
+### Query 9 - Continent x Pandemic Period Sales `[GROUPING SETS]`
 
 ```sql
 SELECT
@@ -474,12 +471,11 @@ GROUP BY GROUPING SETS (
     ()
 );
 ```
-
-**Analytical value:** Demonstrates `GROUPING SETS` as a more surgical alternative to `CUBE` — producing only the four subtotal combinations that are analytically relevant (joint, per-continent, per-period, global) rather than all possible combinations.
+`GROUPING SETS` as a more precise alternative to `CUBE`, producing only the four analytically relevant subtotal combinations (joint, per-continent, per-period, and global) rather than all possible combinations.
 
 ---
 
-### Query 10 — Renewable Share of Electricity per Country
+### Query 10 - Renewable Share of Electricity per Country
 
 ```sql
 SELECT
@@ -492,11 +488,11 @@ WHERE electricityGeneration > 0
 ORDER BY c.country, y.year;
 ```
 
-**Analytical value:** Computes the share of renewable generation directly in SQL. The `WHERE electricityGeneration > 0` guard prevents division-by-zero. This metric is the most direct indicator of grid cleanliness and can be paired with Query 12 to assess whether EV growth correlates with grid improvement.
+ Computes the share of renewable generation directly in SQL. The `WHERE electricityGeneration > 0` guard prevents division-by-zero. This metric is the most direct indicator of grid cleanliness and can be paired with Query 11 to assess whether EV growth correlates with grid improvement.
 
 ---
 
-### Query 12 — Is EV Adoption Reducing CO₂? `[Core Hypothesis Test]`
+### Query 11 - Is EV Adoption Reducing $CO_2$? `[Core Hypothesis Test]`
 
 ```sql
 SELECT
@@ -513,7 +509,7 @@ GROUP BY c.country, y.year
 ORDER BY c.country, y.year;
 ```
 
-**Analytical value:** This is the most analytically central query of the project. It directly integrates all three fact tables — EV adoption (`EVMarket`), grid cleanliness (`CountryEnergy`), and carbon footprint (`CountryMacroeconomics`) — into a single per-country, per-year panel. The result is a ready-made dataset for scatter plots, regression, or correlation analysis to test whether higher `evSalesShare` + higher `renewableElectricityGeneration` actually translates into lower `co2PerCapita`. `SUM()` and `AVG()` are applied appropriately to their respective measure types.
+ This is the most analytically central query of the project. It directly integrates all three fact tables - EV adoption (`EVMarket`), grid cleanliness (`CountryEnergy`), and carbon footprint (`CountryMacroeconomics`) - into a single per-country, per-year panel. The result is a used to test whether higher `evSalesShare` + higher `renewableElectricityGeneration` actually translates into lower `co2PerCapita`. `SUM()` and `AVG()` are applied appropriately to their respective measure types.
 
 ---
 
@@ -522,7 +518,6 @@ ORDER BY c.country, y.year;
 ### 6.1 Repository Map
 
 ```
-Data-Management-Project/
 │
 ├── raw_datasets/                   
 │   ├── iea-global-ev-sales.csv
