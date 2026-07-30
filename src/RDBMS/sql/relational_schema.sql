@@ -153,7 +153,7 @@ CREATE TABLE CountryEnergy (
 
 -- ======================================================
 -- ASSOCIATION TABLE: MacroeconomicData
--- Records annual population, GDP and CO₂ metrics per country/year.
+-- Records annual population, GDP and CO2 metrics per country/year.
 -- DW equivalent: CountryMacroeconomics fact table.
 -- ======================================================
 

@@ -19,11 +19,11 @@
 
 # 1. Project Overview & Objectives
 
-The main question behind this project is simple: **does using an electric vehicle really reduce environmental impact?** The answer depends on how the electricity is produced. If a Battery Electric Vehicle (BEV) is charged using electricity generated mainly from coal, its total CO₂ emissions during its lifetime can even be higher than those of an efficient petrol car. In this case, the emissions are not produced directly by the vehicle, but during electricity generation.
+The main question behind this project is simple: **does using an electric vehicle really reduce environmental impact?** The answer depends on how the electricity is produced. If a Battery Electric Vehicle (BEV) is charged using electricity generated mainly from coal, its total $CO_2$ emissions during its lifetime can even be higher than those of an efficient petrol car. In this case, the emissions are not produced directly by the vehicle, but during electricity generation.
 
 To study this problem, a **Data Warehouse (DW)** was developed by integrating three different open-access datasets. The analysis covers **50 countries** from **2010 to 2023**. The project focuses on two main objectives:
 
-1. **EV Impact Assessment** – Evaluate whether the adoption of electric vehicles contributes to reducing national CO₂ emissions, considering the electricity generation mix of each country and the possible *grid-shift* effect, where electricity used for charging is mainly produced from fossil fuels.
+1. **EV Impact Assessment** – Evaluate whether the adoption of electric vehicles contributes to reducing national $CO_2$ emissions, considering the electricity generation mix of each country and the possible *grid-shift* effect, where electricity used for charging is mainly produced from fossil fuels.
 2. **Economic Transition Disparity** – Compare the adoption of electric vehicles in countries with different GDP levels to understand whether economic resources influence the speed of the energy transition.
 
 The Data Warehouse was first designed at the conceptual level using the **Dimensional Fact Model (DFM)** and then implemented as a **Relational OLAP (ROLAP)** Star Schema. Shared dimensions between different fact tables make it possible to perform **Drill-across** analyses. The project also supports common OLAP operations through SQL aggregation features such as `ROLLUP`, `CUBE`, `GROUPING SETS`, together with window functions for trend analysis.
@@ -40,9 +40,9 @@ The project uses three main datasets. During the ETL process, three additional d
 
 | # | Name | Source | Raw Size | Granularity |
 |---|------|--------|----------|-------------|
-| 1 | **IEA Global EV Sales** (2010–2023) | International Energy Agency / Kaggle | 12,654 rows × 8 columns | `[Country, Year, Vehicle Mode, Powertrain, Parameter]` |
-| 2 | **OWID CO₂ & GHG Emissions** | Our World in Data / Global Carbon Project | 50,411 rows × 79 columns | `[Country, Year]` |
-| 3 | **OWID Energy Dataset** | Our World in Data / BP / Ember / IEA | 23,377 rows × 130 columns | `[Country, Year]` |
+| 1 | **IEA Global EV Sales** (2010–2023) | International Energy Agency / Kaggle | 12,654 rows x 8 columns | `[Country, Year, Vehicle Mode, Powertrain, Parameter]` |
+| 2 | **OWID $CO_2$ & GHG Emissions** | Our World in Data / Global Carbon Project | 50,411 rows x 79 columns | `[Country, Year]` |
+| 3 | **OWID Energy Dataset** | Our World in Data / BP / Ember / IEA | 23,377 rows x 130 columns | `[Country, Year]` |
 
 ### Auxiliary Datasets
 
@@ -70,11 +70,11 @@ Two parameters, `Oil displacement Mbd` and `Oil displacement, million lge`, were
 
 The `category` column, which contains the values `Historical`, `Projection-STEPS`, and `Projection-APS`, was only used to filter the data. Since only historical records were kept, this column was no longer needed and was removed.
 
-#### OWID CO₂, selected attributes
+#### OWID $CO_2$, selected attributes
 
 The original dataset contains 79 columns, but only 14 were selected for the Data Warehouse.
 
-Several attributes were removed because they were outside the scope of the project. These include cumulative historical emissions, trade-adjusted consumption emissions, and greenhouse gases other than CO₂. The `iso_code` column was used to identify and remove rows that do not represent individual countries, such as "Africa (GCP)" and other macro-regions.
+Several attributes were removed because they were outside the scope of the project. These include cumulative historical emissions, trade-adjusted consumption emissions, and greenhouse gases other than $CO_2$. The `iso_code` column was used to identify and remove rows that do not represent individual countries, such as "Africa (GCP)" and other macro-regions.
 
 #### OWID Energy, selected attributes
 
@@ -119,7 +119,7 @@ Different strategies were used depending on the type of data.
 
 For EV indicators, including sales, stock, shares, and electricity demand, missing values created during the pivot operation were replaced with `0.0`. In these cases, a missing value simply means that no activity was recorded for that country and category.
 
-For macroeconomic and energy variables, such as GDP, population, CO₂ emissions, and electricity generation, missing values were kept as `NULL`. Replacing these values with zero would produce incorrect averages and ratio calculations during OLAP analyses.
+For macroeconomic and energy variables, such as GDP, population, $CO_2$ emissions, and electricity generation, missing values were kept as `NULL`. Replacing these values with zero would produce incorrect averages and ratio calculations during OLAP analyses.
 
 #### Step 5, Patching Energy Data with Ember
 
@@ -138,8 +138,8 @@ The resulting table was joined with both `co2_clean` and `energy_clean` using `(
 After updating GDP and population values, all ratio indicators were recalculated to ensure consistency throughout the Data Warehouse.
 
 ```text
-co2PerCapita = (co2Emissions × 10⁶) / population
-co2PerGDP    = (co2Emissions × 10⁹) / GDP
+co2PerCapita = (co2Emissions x 10⁶) / population
+co2PerGDP    = (co2Emissions x 10⁹) / GDP
 ```
 
 This approach guarantees that the calculated indicators are based on the updated GDP and population values instead of the original ratios provided by OWID.
@@ -153,19 +153,19 @@ This approach guarantees that the calculated indicators are based on the updated
 | `clean_owid_co2.csv` | ~3,052 | 0 | 2010–2023 |
 | `clean_owid_energy.csv` | ~3,078 | 0 | 2010–2023 |
 
-The final validation confirmed complete geographic coverage. All 50 ISO codes present in the EV dataset are also available in both the CO₂ and Energy datasets, ensuring referential integrity inside the Data Warehouse.
+The final validation confirmed complete geographic coverage. All 50 ISO codes present in the EV dataset are also available in both the $CO_2$ and Energy datasets, ensuring referential integrity inside the Data Warehouse.
 
 ---
 
 # 3. Data Warehousing & Methodology
 
 ## 3.1 Design Approach
-
+![DFM Schema](../../DFM%20Schema/assets/DFM.png)
 The Data Warehouse was designed following the **Dimensional Fact Model (DFM)** methodology. According to the DFM, the first step is to identify the facts, the measures associated with each fact, and the dimensions that are used to analyse and aggregate the data. After the conceptual design, the model can be translated into the logical schema.
 
 One of the most important design choices was to use **multiple fact tables** instead of storing all the information in a single table. This decision was necessary because the datasets have different levels of granularity.
 
-The EV Sales dataset is organised by `Country × Year × Vehicle Type × Powertrain`, while the CO₂ and Energy datasets are organised only by `Country × Year`. If all the data were combined into one fact table, the CO₂ and energy values would be repeated for every vehicle type and powertrain. As a result, aggregate operations such as `SUM(co2Emissions)` would produce incorrect values because the same emissions would be counted multiple times.
+The EV Sales dataset is organised by `Country x Year x Vehicle Type x Powertrain`, while the $CO_2$ and Energy datasets are organised only by `Country x Year`. If all the data were combined into one fact table, the $CO_2$ and energy values would be repeated for every vehicle type and powertrain. As a result, aggregate operations such as `SUM(co2Emissions)` would produce incorrect values because the same emissions would be counted multiple times.
 
 To avoid this problem, the Data Warehouse uses a **Multi-Fact Star Schema** with **conformed dimensions**. The shared dimensions, `CountryDim` and `YearDim`, connect the different fact tables and make it possible to analyse data coming from different sources through **drill-across** operations.
 
@@ -173,7 +173,7 @@ To avoid this problem, the Data Warehouse uses a **Multi-Fact Star Schema** with
 
 The logical schema, implemented in `src/DW/init.sql`, follows the **Star Schema** model. It includes four dimension tables and four fact tables.
 
-![DFM Schema](../../DFM%20Schema/assets/DFM.png)
+![DFM Schema](../../DFM%20Schema/assets/star.png)
 
 ### Dimension Tables
 
@@ -188,10 +188,10 @@ The logical schema, implemented in `src/DW/init.sql`, follows the **Star Schema*
 
 | Table | Grain | Main Measures |
 |-------|-------|---------------|
-| `EVMarket` | Country × Year × Vehicle Type × Powertrain | EV sales indicators |
-| `EVInfrastructure` | Country × Year | Charging infrastructure indicators |
-| `CountryEnergy` | Country × Year | Electricity generation by energy source |
-| `CountryMacroeconomics` | Country × Year | $CO_2$ emissions and macroeconomic indicators |
+| `EVMarket` | Country x Year x Vehicle Type x Powertrain | EV sales indicators |
+| `EVInfrastructure` | Country x Year | Charging infrastructure indicators |
+| `CountryEnergy` | Country x Year | Electricity generation by energy source |
+| `CountryMacroeconomics` | Country x Year | $CO_2$ emissions and macroeconomic indicators |
 
 The `CountryEnergy` and `CountryMacroeconomics` tables share the `CountryDim` and `YearDim` dimensions with `EVMarket`. This design avoids duplicated values caused by different granularities and allows data from different fact tables to be analysed together using drill-across queries.
 
@@ -211,7 +211,7 @@ According to the measure classification introduced in the DFM methodology, the m
 
 ### 4.1 `clean_iea_ev_sales.csv` — EV Market Data
 
-Granularity: one row per `[Country × Year × Vehicle Type × Powertrain]`.
+Granularity: one row per `[Country x Year x Vehicle Type x Powertrain]`.
 
 | Column | Type | Description |
 |--------|------|-------------|
@@ -234,7 +234,7 @@ Granularity: one row per `[Country × Year × Vehicle Type × Powertrain]`.
 
 ### 4.2 `clean_iea_ev_infrastructure.csv` — Charging Infrastructure
 
-Granularity: one row per `[Country × Year]`.
+Granularity: one row per `[Country x Year]`.
 
 | Column | Type | Description |
 |--------|------|-------------|
@@ -252,7 +252,7 @@ Granularity: one row per `[Country × Year]`.
 
 ### 4.3 `clean_owid_co2.csv` — Emissions & Macroeconomics
 
-Granularity: one row per `[Country × Year]`.
+Granularity: one row per `[Country x Year]`.
 
 | Column | Type | Description |
 |--------|------|-------------|
@@ -265,19 +265,19 @@ Granularity: one row per `[Country × Year]`.
 | `pandemicPeriod` | VARCHAR | Pre-baked pandemic grouping. |
 | `population` | FLOAT | Country population (World Bank primary, OWID fallback). |
 | `GDP` | FLOAT | GDP in current USD (World Bank primary, OWID PPP fallback). |
-| `co2Emissions` | FLOAT | Total CO₂ from fossil fuels and industry (million tonnes). Core project measure. **Flow measure**. |
-| `co2PerCapita` | FLOAT | CO₂ per person (tonnes). Recalculated from `co2Emissions / population`. **Unit measure**. |
-| `co2PerGDP` | FLOAT | CO₂ per unit of GDP (kg CO₂ per USD). Recalculated. **Unit measure**. Measures carbon intensity of economic activity. |
-| `co2EmissionsOil` | FLOAT | CO₂ from oil combustion (million tonnes). Proxy for transport fuel emissions; expected to decline with EV adoption. **Flow measure**. |
-| `co2EmissionsOilPerCapita` | FLOAT | Oil CO₂ per person (tonnes). Recalculated. **Unit measure**. |
-| `co2EmissionsCoal` | FLOAT | CO₂ from coal combustion (million tonnes). Proxy for coal-grid electricity; key for detecting the grid-shift effect. **Flow measure**. |
-| `co2EmissionsCoalPerCapita` | FLOAT | Coal CO₂ per person (tonnes). Recalculated. **Unit measure**. |
-| `co2EmissionsPerUnitEnergy` | FLOAT | Carbon intensity of the energy mix (kg CO₂ / kWh). Measures how "dirty" a country's energy system is. **Unit measure**. |
+| `co2Emissions` | FLOAT | Total $CO_2$ from fossil fuels and industry (million tonnes). Core project measure. **Flow measure**. |
+| `co2PerCapita` | FLOAT | $CO_2$ per person (tonnes). Recalculated from `co2Emissions / population`. **Unit measure**. |
+| `co2PerGDP` | FLOAT | $CO_2$ per unit of GDP (kg $CO_2$ per USD). Recalculated. **Unit measure**. Measures carbon intensity of economic activity. |
+| `co2EmissionsOil` | FLOAT | $CO_2$ from oil combustion (million tonnes). Proxy for transport fuel emissions; expected to decline with EV adoption. **Flow measure**. |
+| `co2EmissionsOilPerCapita` | FLOAT | Oil $CO_2$ per person (tonnes). Recalculated. **Unit measure**. |
+| `co2EmissionsCoal` | FLOAT | $CO_2$ from coal combustion (million tonnes). Proxy for coal-grid electricity; key for detecting the grid-shift effect. **Flow measure**. |
+| `co2EmissionsCoalPerCapita` | FLOAT | Coal $CO_2$ per person (tonnes). Recalculated. **Unit measure**. |
+| `co2EmissionsPerUnitEnergy` | FLOAT | Carbon intensity of the energy mix (kg $CO_2$ / kWh). Measures how "dirty" a country's energy system is. **Unit measure**. |
 | `energyConsumption` | FLOAT | Total primary energy consumption (TWh). Context variable for energy demand analysis. **Flow measure**. |
 
 ### 4.4 `clean_owid_energy.csv` — Electricity Generation Mix
 
-Granularity: one row per `[Country × Year]`.
+Granularity: one row per `[Country x Year]`.
 
 | Column | Type | Description |
 |--------|------|-------------|

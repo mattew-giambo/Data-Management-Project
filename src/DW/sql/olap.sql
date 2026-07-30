@@ -18,8 +18,8 @@ LEFT JOIN EVMarket m
 GROUP BY ROLLUP(cont.continent, y.year)
 ORDER BY cont.continent, y.year;
 
--- 2. Renewable Electricity vs CO₂ Emissions
--- Question: Are countries with more renewable electricity producing less CO₂?
+-- 2. Renewable Electricity vs CO2 Emissions
+-- Question: Are countries with more renewable electricity producing less CO2?
 
 SELECT
     c.country,
@@ -127,7 +127,7 @@ WHERE em.evElectricityDemand > 0
 GROUP BY c.country, y.year
 ORDER BY c.country, y.year;
 
--- 9. Continent × Pandemic Period (GROUPING SETS) (superflua)
+-- 9. Continent x Pandemic Period (GROUPING SETS) (superflua)
 SELECT
     c.continent,
     y.pandemicPeriod,
@@ -169,10 +169,10 @@ JOIN YearDim y ON m.keyY = y.keyY
 GROUP BY c.country
 ORDER BY improvement DESC;
 
--- 12. Is EV Adoption Reducing CO₂?
+-- 12. Is EV Adoption Reducing CO2?
 -- This directly answers your project question.
 -- This dataset is ideal for scatter plots, dashboards, or statistical analysis 
--- to assess whether higher EV adoption combined with cleaner electricity generation corresponds to lower CO₂ emissions.
+-- to assess whether higher EV adoption combined with cleaner electricity generation corresponds to lower CO2 emissions.
 SELECT
     c.country,
     y.year,

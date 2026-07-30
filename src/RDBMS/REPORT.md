@@ -23,7 +23,7 @@ This report documents **Task 2** of the Data Management project, which required 
 
 The benchmark evaluates both architectures across **11 analytical queries** designed to investigate the relationship between electric vehicle (EV) adoption, electricity grid cleanliness, and national $CO_2$ emissions. Performance was measured empirically using PostgreSQL's `EXPLAIN (ANALYZE, BUFFERS)` facility across 10 execution runs per query. 
 
-Overall, the Data Warehouse star schema outperformed the 3NF relational database with an overall execution speedup of **1.37×** (24.47 ms total for DW vs. 33.48 ms for RDBMS). The DW achieved its highest speedups on queries that exploit native OLAP operators such as `CUBE`, `GROUPING SETS`, and window functions like `RANK()` (peaking at **3.43×** speedup for Q4). Furthermore, the star schema reduced SQL code verbosity by an average factor of **1.43×**, minimizing query complexity and potential human error.
+Overall, the Data Warehouse star schema outperformed the 3NF relational database with an overall execution speedup of **1.37x** (24.47 ms total for DW vs. 33.48 ms for RDBMS). The DW achieved its highest speedups on queries that exploit native OLAP operators such as `CUBE`, `GROUPING SETS`, and window functions like `RANK()` (peaking at **3.43x** speedup for Q4). Furthermore, the star schema reduced SQL code verbosity by an average factor of **1.43x**, minimizing query complexity and potential human error.
 
 ---
 
@@ -108,39 +108,39 @@ The raw results are stored in [`benchmark_results.csv`](../benchmark_results.csv
 
 | ID | Query Description | RDBMS Plan (ms) | RDBMS Exec (ms) | DW Plan (ms) | DW Exec (ms) | RDBMS Total (ms) | DW Total (ms) | DW Speedup |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
-| **Q1** | EV Sales (Continent × Year) | 0.377 | 3.381 | 0.227 | 3.582 | 3.758 | 3.809 | **0.99×** |
-| **Q2** | Renewable Electricity vs $CO_2$ | 0.344 | 3.208 | 0.323 | 3.104 | 3.552 | 3.427 | **1.04×** |
-| **Q3** | Rich vs Poor Countries | 0.151 | 2.698 | 0.158 | 2.559 | 2.849 | 2.717 | **1.05×** |
-| **Q4** | Top Countries by EV Stock | 0.144 | 7.162 | 0.123 | 2.005 | 7.306 | 2.129 | **3.43×** |
-| **Q5** | Vehicle Type Analysis | 0.155 | 3.460 | 0.084 | 1.879 | 3.615 | 1.964 | **1.84×** |
-| **Q6** | Pandemic Impact | 0.034 | 1.020 | 0.033 | 1.003 | 1.054 | 1.037 | **1.02×** |
-| **Q7** | Infrastructure Growth | 0.150 | 0.441 | 0.078 | 0.345 | 0.591 | 0.424 | **1.39×** |
-| **Q8** | Green Elec & High EV Demand | 0.268 | 0.393 | 0.269 | 0.389 | 0.661 | 0.658 | **1.00×** |
-| **Q9** | Continent × Pandemic Period | 0.156 | 3.390 | 0.078 | 1.738 | 3.546 | 1.816 | **1.95×** |
-| **Q10**| Renewable Share % | 0.088 | 2.302 | 0.085 | 2.319 | 2.391 | 2.404 | **0.99×** |
-| **Q11**| Is EV Adoption Reducing $CO_2$? | 0.882 | 3.272 | 0.862 | 3.218 | 4.155 | 4.081 | **1.02×** |
-| **Total**| **Cumulative Benchmarks** | **2.749** | **30.727** | **2.320** | **22.146** | **33.478** | **24.466** | **1.37×** |
+| **Q1** | EV Sales (Continent x Year) | 0.377 | 3.381 | 0.227 | 3.582 | 3.758 | 3.809 | **0.99x** |
+| **Q2** | Renewable Electricity vs $CO_2$ | 0.344 | 3.208 | 0.323 | 3.104 | 3.552 | 3.427 | **1.04x** |
+| **Q3** | Rich vs Poor Countries | 0.151 | 2.698 | 0.158 | 2.559 | 2.849 | 2.717 | **1.05x** |
+| **Q4** | Top Countries by EV Stock | 0.144 | 7.162 | 0.123 | 2.005 | 7.306 | 2.129 | **3.43x** |
+| **Q5** | Vehicle Type Analysis | 0.155 | 3.460 | 0.084 | 1.879 | 3.615 | 1.964 | **1.84x** |
+| **Q6** | Pandemic Impact | 0.034 | 1.020 | 0.033 | 1.003 | 1.054 | 1.037 | **1.02x** |
+| **Q7** | Infrastructure Growth | 0.150 | 0.441 | 0.078 | 0.345 | 0.591 | 0.424 | **1.39x** |
+| **Q8** | Green Elec & High EV Demand | 0.268 | 0.393 | 0.269 | 0.389 | 0.661 | 0.658 | **1.00x** |
+| **Q9** | Continent x Pandemic Period | 0.156 | 3.390 | 0.078 | 1.738 | 3.546 | 1.816 | **1.95x** |
+| **Q10**| Renewable Share % | 0.088 | 2.302 | 0.085 | 2.319 | 2.391 | 2.404 | **0.99x** |
+| **Q11**| Is EV Adoption Reducing $CO_2$? | 0.882 | 3.272 | 0.862 | 3.218 | 4.155 | 4.081 | **1.02x** |
+| **Total**| **Cumulative Benchmarks** | **2.749** | **30.727** | **2.320** | **22.146** | **33.478** | **24.466** | **1.37x** |
 
-Overall, the Data Warehouse (DW) model outperforms the standard RDBMS across most benchmarked scenarios, achieving a **1.37×** total execution speedup (33.48 ms total for RDBMS vs. 24.47 ms for DW) and demonstrating faster performance in 9 out of 11 queries.
+Overall, the Data Warehouse (DW) model outperforms the standard RDBMS across most benchmarked scenarios, achieving a **1.37x** total execution speedup (33.48 ms total for RDBMS vs. 24.47 ms for DW) and demonstrating faster performance in 9 out of 11 queries.
 The performance difference is particularly noticeable in complex analytical queries involving multiple joins and aggregations:
-- **High speedup queries (Q4, Q5, Q9)**: The Data Warehouse achieves significant gains, peaking at **3.43×** for Q4 (Top Countries by EV Stock), **1.95×** for Q9 (Continent × Pandemic Period), and **1.84×** for Q5 (Vehicle Type Analysis). This improvement is primarily driven by the denormalized star schema, which minimizes costly runtime table joins and avoids repetitive table scans.
-- **Moderate speedup queries (Q7)**: Query Q7 (Infrastructure Growth) shows a **1.39×** speedup, benefiting from native window functions (`LAG()`) over correlated self-joins.
-- **Comparable queries (Q1–Q3, Q6, Q8, Q10, Q11)**: Lightweight queries exhibit almost identical performance (~0.99× to 1.05× speedup). In these cases, execution time is dominated by fixed PostgreSQL overhead rather than scanning large volumes of data, making both architectures equally fast.
+- **High speedup queries (Q4, Q5, Q9)**: The Data Warehouse achieves significant gains, peaking at **3.43x** for Q4 (Top Countries by EV Stock), **1.95x** for Q9 (Continent x Pandemic Period), and **1.84x** for Q5 (Vehicle Type Analysis). This improvement is primarily driven by the denormalized star schema, which minimizes costly runtime table joins and avoids repetitive table scans.
+- **Moderate speedup queries (Q7)**: Query Q7 (Infrastructure Growth) shows a **1.39x** speedup, benefiting from native window functions (`LAG()`) over correlated self-joins.
+- **Comparable queries (Q1–Q3, Q6, Q8, Q10, Q11)**: Lightweight queries exhibit almost identical performance (~0.99x to 1.05x speedup). In these cases, execution time is dominated by fixed PostgreSQL overhead rather than scanning large volumes of data, making both architectures equally fast.
 ---
 
 <!-- ## 4. Detailed Performance & Execution Analysis
 
 ### 4.1 Scenario 1: Significant Data Warehouse Victories (High Speedup)
 
-**Q4 — Top Countries by EV Stock (RANK window function)**: The DW executes in **2.59 ms** versus **9.97 ms** for the RDBMS — a speedup of **3.85×**. The DW uses PostgreSQL's built-in `RANK() OVER (PARTITION BY year ORDER BY SUM(evStock) DESC)` evaluated in a single pass over the fact table. The RDBMS equivalent requires a CTE materialisation followed by a self-join (`stock_by_country a LEFT JOIN stock_by_country b`) to count the number of countries with a higher stock in the same year. This is inherently O(n²) in the worst case and results in more join nodes in the query plan (2 vs 2, but with a much heavier self-join overhead).
+**Q4 — Top Countries by EV Stock (RANK window function)**: The DW executes in **2.59 ms** versus **9.97 ms** for the RDBMS — a speedup of **3.85x**. The DW uses PostgreSQL's built-in `RANK() OVER (PARTITION BY year ORDER BY SUM(evStock) DESC)` evaluated in a single pass over the fact table. The RDBMS equivalent requires a CTE materialisation followed by a self-join (`stock_by_country a LEFT JOIN stock_by_country b`) to count the number of countries with a higher stock in the same year. This is inherently O(n²) in the worst case and results in more join nodes in the query plan (2 vs 2, but with a much heavier self-join overhead).
 
-**Q5 — Vehicle Type Analysis (CUBE)**: The DW completes in **2.86 ms** versus **6.86 ms** — a speedup of **2.39×**. The DW uses `GROUP BY CUBE(vehicleType, powertrain)`, which generates all four grouping combinations in a single scan of the `EVMarket` table (1 aggregation node). The RDBMS version must issue four separate `GROUP BY` queries connected by `UNION ALL`, resulting in 8 sequential scans and 4 aggregation nodes.
+**Q5 — Vehicle Type Analysis (CUBE)**: The DW completes in **2.86 ms** versus **6.86 ms** — a speedup of **2.39x**. The DW uses `GROUP BY CUBE(vehicleType, powertrain)`, which generates all four grouping combinations in a single scan of the `EVMarket` table (1 aggregation node). The RDBMS version must issue four separate `GROUP BY` queries connected by `UNION ALL`, resulting in 8 sequential scans and 4 aggregation nodes.
 
-**Q9 — Continent × Pandemic Period (GROUPING SETS)**: The DW executes in **2.91 ms** versus **4.48 ms** — a speedup of **1.54×**. Similar to Q5, `GROUPING SETS` processes all four grouping levels in one pass, while the RDBMS requires four `UNION ALL` blocks scanning the data multiple times.
+**Q9 — Continent x Pandemic Period (GROUPING SETS)**: The DW executes in **2.91 ms** versus **4.48 ms** — a speedup of **1.54x**. Similar to Q5, `GROUPING SETS` processes all four grouping levels in one pass, while the RDBMS requires four `UNION ALL` blocks scanning the data multiple times.
 
 ### 4.2 Queries Where the Two Approaches Are Comparable
 
-**Q2, Q6, Q7, Q8, Q10, Q11**: These queries use standard SQL constructs (simple `GROUP BY`, arithmetic ratios, `MIN/MAX` aggregations, multi-table joins) that translate directly between the two paradigms with no structural disadvantage on either side. The speedup differences are all below 1.25× and could be attributed to minor variance in buffer cache state rather than a genuine architectural advantage.
+**Q2, Q6, Q7, Q8, Q10, Q11**: These queries use standard SQL constructs (simple `GROUP BY`, arithmetic ratios, `MIN/MAX` aggregations, multi-table joins) that translate directly between the two paradigms with no structural disadvantage on either side. The speedup differences are all below 1.25x and could be attributed to minor variance in buffer cache state rather than a genuine architectural advantage.
 
 **Q12 — Is EV Adoption Reducing $CO_2$?**: Interestingly, the RDBMS is marginally faster here (**6.21 ms** vs **6.68 ms**). Both versions perform a three-fact-table join of identical logical complexity. The RDBMS planner may have produced a slightly more efficient join order given the surrogate key statistics available to it.
 
@@ -155,22 +155,22 @@ In addition to query execution time, another key dimension of comparison is **SQ
 
 | ID | Analytical Concept | RDBMS 3NF Lines | DW Star Schema Lines | Verbosity Ratio | Structural Cause |
 |---|---|---:|---:|---:|---|
-| **Q1** | `ROLLUP` | 23 | 16 | **1.4×** | 3 `UNION ALL` blocks vs native `ROLLUP` |
-| **Q2** | Multi-fact JOIN | 12 | 12 | **1.0×** | Identical 2-fact join pattern |
-| **Q3** | `CASE` + `GROUP BY` | 15 | 15 | **1.0×** | Identical conditional logic |
-| **Q4** | `RANK()` Window Function | 21 | 12 | **1.8×** | CTE + Self-join vs native `RANK()` |
-| **Q5** | `CUBE` | 31 | 9 | **3.4×** | 4 `UNION ALL` blocks vs native `CUBE` |
-| **Q6** | Simple `GROUP BY` | 7 | 6 | **1.2×** | Minor table alias difference |
-| **Q7** | `LAG()` Window Function | 22 | 16 | **1.4×** | Correlated self-join vs `LAG()` |
-| **Q8** | Multi-fact + Filter | 15 | 15 | **1.0×** | Identical join structure |
-| **Q9** | `GROUPING SETS` | 31 | 13 | **2.4×** | 4 `UNION ALL` blocks vs `GROUPING SETS` |
-| **Q10**| Arithmetic Ratio | 13 | 13 | **1.0×** | Identical formula structure |
-| **Q11**| 3-Fact Join (Core Test) | 21 | 21 | **1.0×** | Identical 3-fact join structure |
-| **Total**| **Overall SQL Lines** | **211** | **148** | **1.43×** | **RDBMS requires 43% more code** |
+| **Q1** | `ROLLUP` | 23 | 16 | **1.4x** | 3 `UNION ALL` blocks vs native `ROLLUP` |
+| **Q2** | Multi-fact JOIN | 12 | 12 | **1.0x** | Identical 2-fact join pattern |
+| **Q3** | `CASE` + `GROUP BY` | 15 | 15 | **1.0x** | Identical conditional logic |
+| **Q4** | `RANK()` Window Function | 21 | 12 | **1.8x** | CTE + Self-join vs native `RANK()` |
+| **Q5** | `CUBE` | 31 | 9 | **3.4x** | 4 `UNION ALL` blocks vs native `CUBE` |
+| **Q6** | Simple `GROUP BY` | 7 | 6 | **1.2x** | Minor table alias difference |
+| **Q7** | `LAG()` Window Function | 22 | 16 | **1.4x** | Correlated self-join vs `LAG()` |
+| **Q8** | Multi-fact + Filter | 15 | 15 | **1.0x** | Identical join structure |
+| **Q9** | `GROUPING SETS` | 31 | 13 | **2.4x** | 4 `UNION ALL` blocks vs `GROUPING SETS` |
+| **Q10**| Arithmetic Ratio | 13 | 13 | **1.0x** | Identical formula structure |
+| **Q11**| 3-Fact Join (Core Test) | 21 | 21 | **1.0x** | Identical 3-fact join structure |
+| **Total**| **Overall SQL Lines** | **211** | **148** | **1.43x** | **RDBMS requires 43% more code** |
 
 ### 5.1 Key Takeaway on Verbosity
 
-For queries using standard SQL operators (Q2, Q3, Q8, Q10, Q11), both paradigms require identical code length. However, when multi-dimensional OLAP syntax (`CUBE`, `GROUPING SETS`, `ROLLUP`) or window functions are required, **the RDBMS requires up to 3.4× more SQL code**. Writing manual `UNION ALL` blocks increases the risk of copy-paste logic errors, while concise OLAP queries improve readability and maintainability. -->
+For queries using standard SQL operators (Q2, Q3, Q8, Q10, Q11), both paradigms require identical code length. However, when multi-dimensional OLAP syntax (`CUBE`, `GROUPING SETS`, `ROLLUP`) or window functions are required, **the RDBMS requires up to 3.4x more SQL code**. Writing manual `UNION ALL` blocks increases the risk of copy-paste logic errors, while concise OLAP queries improve readability and maintainability. -->
 
 ---
 
@@ -179,7 +179,7 @@ For queries using standard SQL operators (Q2, Q3, Q8, Q10, Q11), both paradigms 
 | Aspect | Relational RDBMS (3NF) | Data Warehouse (Star Schema) |
 |---|---|---|
 | **Data Redundancy** | **Zero redundancy**. Fully normalized according to 3NF rules. | **Controlled redundancy**. Dimension tables store denormalized temporal/geographic attributes. |
-| **Query Performance** | Slower on multi-dimensional aggregations and window rankings (**33.48 ms** total). | **Faster overall** (**24.47 ms** total, up to **3.43× speedup** on complex queries). |
+| **Query Performance** | Slower on multi-dimensional aggregations and window rankings (**33.48 ms** total). | **Faster overall** (**24.47 ms** total, up to **3.43x speedup** on complex queries). |
 | **Query Complexity** | **Higher**. Lacks native OLAP operators; requires verbose `UNION ALL` blocks and self-joins. | **Lower**. Native `CUBE`, `ROLLUP`, `GROUPING SETS`, and window functions keep SQL concise. |
 | **ETL Pipeline** | **Simpler initial load**. Row-by-row mapping of surrogate keys in Python ([load_db.py](load_db.py)). | **Dedicated ETL Pipeline**. Requires extraction, transformation, dimension key mapping, and multi-fact staging ([etl.py](../DW/etl.py)). |
 | **Primary Use Case** | Transactional processing (OLTP), single-record inserts, updates, and delete operations. | Analytical reporting (OLAP), trend analysis, and business intelligence dashboards. |
@@ -190,7 +190,7 @@ For queries using standard SQL operators (Q2, Q3, Q8, Q10, Q11), both paradigms 
 
 This benchmark confirms the theoretical foundations of Data Warehousing vs. Relational Database design:
 
-1. **Superior Analytical Performance**: For analytical workloads involving multi-dimensional aggregations and ranking, the Data Warehouse Star Schema is clearly superior. It executed faster on 9 out of 11 queries, achieving a cumulative speedup of **1.37×** and peak speedups of **3.43×** (Q4), **1.95×** (Q9), and **1.84×** (Q5).
+1. **Superior Analytical Performance**: For analytical workloads involving multi-dimensional aggregations and ranking, the Data Warehouse Star Schema is clearly superior. It executed faster on 9 out of 11 queries, achieving a cumulative speedup of **1.37x** and peak speedups of **3.43x** (Q4), **1.95x** (Q9), and **1.84x** (Q5).
 2. **Impact of Native OLAP Operators**: The performance gap is directly proportional to the use of OLAP-specific operators. While relational databases must emulate these features via `UNION ALL` passes and self-joins, the Data Warehouse computes multiple aggregation levels in a single scan of the fact table using `CUBE`, `GROUPING SETS` or window functions.
 3. **Developer Productivity & Code Clarity**: The Data Warehouse reduces SQL code verbosity significantly for complex queries. The RDBMS required more SQL code than the DW. Concise queries lower the risk of logical errors.
 

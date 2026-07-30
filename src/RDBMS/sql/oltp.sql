@@ -76,8 +76,8 @@ ORDER BY continent, year;
 
 
 -- ============================================================
--- Query 2: Renewable Electricity vs CO₂ Emissions
--- Question: Are countries with more renewable electricity producing less CO₂?
+-- Query 2: Renewable Electricity vs CO2 Emissions
+-- Question: Are countries with more renewable electricity producing less CO2?
 --
 -- DW version:   Two fact tables (CountryEnergy, CountryMacroeconomics)
 --               joined via shared composite keys (keyC, keyY).
@@ -185,7 +185,7 @@ ORDER BY a.year, ranking;
 --
 -- RDBMS approach:    Four explicit GROUP BY queries with UNION ALL.
 --   → No built-in CUBE operator; every combination must be hand-written.
---   → The query is 4× longer but logically equivalent.
+--   → The query is 4x longer but logically equivalent.
 -- ============================================================
 
 -- Combination 1: (vehicle_type, powertrain) — most detailed
@@ -324,7 +324,7 @@ ORDER BY c.country_name, y.year;
 
 
 -- ============================================================
--- Query 9: Continent × Pandemic Period  [RDBMS equivalent of GROUPING SETS]
+-- Query 9: Continent x Pandemic Period  [RDBMS equivalent of GROUPING SETS]
 -- Question: How do EV sales vary by continent and pandemic period?
 --
 -- DW version uses:   GROUP BY GROUPING SETS (
@@ -436,8 +436,8 @@ ORDER BY improvement DESC;
 
 
 -- ============================================================
--- Query 12: Is EV Adoption Reducing CO₂?
--- Question: Is there a correlation between EV adoption and lower CO₂?
+-- Query 12: Is EV Adoption Reducing CO2?
+-- Question: Is there a correlation between EV adoption and lower CO2?
 --
 -- DW version:   Three-fact-table join (EVMarket + CountryEnergy +
 --               CountryMacroeconomics) on composite keys.
@@ -447,7 +447,7 @@ ORDER BY improvement DESC;
 --   are the column names and the use of (country_id, year_id) instead
 --   of composite (keyC, keyY) keys.
 --   Using SUM for ev_sales_share because EVSales stores one row per
---   vehicle type × powertrain combination; we aggregate across these
+--   vehicle type x powertrain combination; we aggregate across these
 --   dimensions to get a single share per (country, year).
 -- ============================================================
 
