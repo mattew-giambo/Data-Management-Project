@@ -6,8 +6,8 @@
 ## Table of Contents
 
 - [1. Problem Definition & Domain Context](#1-problem-definition--domain-context)
-- [2. Architectural Comparison: RDBMS (3NF) vs. DW (Star Schema)](#2-architectural-comparison-rdbms-3nf-vs-dw-star-schema)
-  - [2.1 The Relational RDBMS Approach (3NF)](#21-the-relational-rdbms-approach-3nf)
+- [2. Architectural Comparison: RDBMS vs. DW (Star Schema)](#2-architectural-comparison-rdbms-3nf-vs-dw-star-schema)
+  - [2.1 The Relational RDBMS Approach](#21-the-relational-rdbms-approach-3nf)
   - [2.2 The Data Warehouse Approach (Star Schema)](#22-the-data-warehouse-approach-star-schema)
 - [3. Benchmark Methodology & Results](#3-benchmark-methodology--results)
   - [3.1 Benchmark Setup](#31-benchmark-setup)
@@ -18,7 +18,7 @@
 ---
 
 This report documents **Task 2** of the Data Management project, which required identifying a data analysis problem and comparing two different technological approaches to address it. The chosen domain is **green mobility and energy transition**, and the comparison is drawn between:
-1. A **Relational Database Management System (RDBMS)** normalized in **Third Normal Form (3NF)**, running on PostgreSQL (`green_mobility_rdbms`).
+1. A **Relational Database Management System (RDBMS)** normalized in **Third Normal Form**, running on PostgreSQL (`green_mobility_rdbms`).
 2. A **Data Warehouse (DW)** implemented as a **Relational OLAP (ROLAP) Star Schema** with full OLAP feature support, also running on PostgreSQL (`green_mobility`).
 
 The benchmark evaluates both architectures across **11 analytical queries** designed to investigate the relationship between electric vehicle (EV) adoption, electricity grid cleanliness, and national $CO_2$ emissions. Performance was measured empirically using PostgreSQL's `EXPLAIN (ANALYZE, BUFFERS)` facility across 10 execution runs per query. 
@@ -46,11 +46,11 @@ Eleven analytical queries (Q1 to Q11) were designed to examine this problem from
 
 ---
 
-## 2. Architectural Comparison: RDBMS (3NF) vs. DW (Star Schema)
+## 2. Architectural Comparison: RDBMS vs. DW (Star Schema)
 
-### 2.1 The Relational RDBMS Approach (3NF)
+### 2.1 The Relational RDBMS Approach
 
-The relational schema ([sql/relational_schema.sql](sql/relational_schema.sql)) adheres to Third Normal Form (3NF). Every entity is normalized in its own table, and referential integrity is enforced through foreign keys and surrogate primary keys (`SERIAL`). The tables are:
+The relational schema ([sql/relational_schema.sql](sql/relational_schema.sql)) adheres to Third Normal Form. Every entity is normalized in its own table, and referential integrity is enforced through foreign keys and surrogate primary keys (`SERIAL`). The tables are:
 
 | Table | Role |
 |---|---|
@@ -176,7 +176,7 @@ For queries using standard SQL operators (Q2, Q3, Q8, Q10, Q11), both paradigms 
 
 ## 6. Architectural Trade-offs & Discussion
 
-| Aspect | Relational RDBMS (3NF) | Data Warehouse (Star Schema) |
+| Aspect | Relational RDBMS | Data Warehouse (Star Schema) |
 |---|---|---|
 | **Data Redundancy** | **Zero redundancy**. Fully normalized according to 3NF rules. | **Controlled redundancy**. Dimension tables store denormalized temporal/geographic attributes. |
 | **Query Performance** | Slower on multi-dimensional aggregations and window rankings (**33.48 ms** total). | **Faster overall** (**24.47 ms** total, up to **3.43x speedup** on complex queries). |

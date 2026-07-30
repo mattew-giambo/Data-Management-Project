@@ -1,11 +1,11 @@
 -- ======================================================
--- GREEN_MOBILITY_RDBMS — Relational Schema (3NF)
+-- GREEN_MOBILITY_RDBMS — Relational Schema
 -- ======================================================
 -- This schema represents the RDBMS (relational) approach to the
 -- same Green Mobility domain modelled as a Star Schema in the DW.
 --
 -- Key differences from the DW (src/DW/init.sql):
---   - Fully normalized (3NF): no redundant attributes in entity tables
+--   - Fully normalized: no redundant attributes in entity tables
 --   - Surrogate primary keys (SERIAL) on every entity table
 --   - No composite primary keys on fact/association tables
 --   - Explicit UNIQUE constraints reflect real-world business keys

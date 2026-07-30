@@ -127,7 +127,7 @@ WHERE em.evElectricityDemand > 0
 GROUP BY c.country, y.year
 ORDER BY c.country, y.year;
 
--- 9. Continent x Pandemic Period (GROUPING SETS) (superflua)
+-- 9. Continent x Pandemic Period (GROUPING SETS)
 SELECT
     c.continent,
     y.pandemicPeriod,
@@ -157,19 +157,7 @@ JOIN YearDim y ON ce.keyY = y.keyY
 WHERE electricityGeneration > 0
 ORDER BY c.country, y.year;
 
--- 11. Countries Improving the Most (Superflua)
-SELECT
-    c.country,
-    MIN(y.year) AS first_year,
-    MAX(y.year) AS last_year,
-    MAX(evStockShare) - MIN(evStockShare) AS improvement
-FROM EVMarket m
-JOIN CountryDim c ON m.keyC = c.keyC
-JOIN YearDim y ON m.keyY = y.keyY
-GROUP BY c.country
-ORDER BY improvement DESC;
-
--- 12. Is EV Adoption Reducing CO2?
+-- 11. Is EV Adoption Reducing CO2?
 -- This directly answers your project question.
 -- This dataset is ideal for scatter plots, dashboards, or statistical analysis 
 -- to assess whether higher EV adoption combined with cleaner electricity generation corresponds to lower CO2 emissions.
