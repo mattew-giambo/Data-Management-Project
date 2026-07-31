@@ -24,6 +24,10 @@ def load_data(csv_path: Path) -> pd.DataFrame:
     df = pd.read_csv(csv_path)
     # DW speedup: ratio RDBMS/DW total time (>1 means DW is faster)
     df["speedup"] = df["rdbms_total_ms"] / df["dw_total_ms"].replace(0, np.nan)
+    # Buffer columns are optional (added only after re-running benchmark.py)
+    for col in ["rdbms_shared_hit", "dw_shared_hit", "rdbms_shared_read", "dw_shared_read"]:
+        if col not in df.columns:
+            df[col] = np.nan
     return df
 
 def save(fig: plt.Figure, path: Path):
@@ -159,6 +163,54 @@ def chart_stacked(df: pd.DataFrame, out: Path):
     fig.tight_layout()
     save(fig, out)
 
+
+# Chart 5 - Shared Buffer Hit
+
+def chart_shared_hit(df: pd.DataFrame, out: Path):
+    """Grouped bar: shared buffer hits per query (blocks served from RAM)."""
+    if df["rdbms_shared_hit"].isna().all():
+        print("  [skip] shared_hit data not available — re-run benchmark.py first.")
+        return
+    fig, ax = plt.subplots(figsize=(14, 5))
+    grouped_bar(
+        ax,
+        x           = df["query_id"].tolist(),
+        left_vals   = df["rdbms_shared_hit"].fillna(0).values,
+        right_vals  = df["dw_shared_hit"].fillna(0).values,
+        left_label  = "RDBMS",
+        right_label = "Data Warehouse (Star Schema)",
+        left_color  = RDBMS_COLOR,
+        right_color = DW_COLOR,
+        ylabel      = "Shared buffer hits (blocks)",
+        title       = "Chart 5 - Shared Buffer Hits: RDBMS vs DW  (higher = more cache reuse)",
+    )
+    fig.tight_layout()
+    save(fig, out)
+
+
+# Chart 6 - Shared Read (Disk I/O)
+
+def chart_shared_read(df: pd.DataFrame, out: Path):
+    """Grouped bar: shared read blocks per query (blocks fetched from disk / OS cache)."""
+    if df["rdbms_shared_read"].isna().all():
+        print("  [skip] shared_read data not available — re-run benchmark.py first.")
+        return
+    fig, ax = plt.subplots(figsize=(14, 5))
+    grouped_bar(
+        ax,
+        x           = df["query_id"].tolist(),
+        left_vals   = df["rdbms_shared_read"].fillna(0).values,
+        right_vals  = df["dw_shared_read"].fillna(0).values,
+        left_label  = "RDBMS",
+        right_label = "Data Warehouse (Star Schema)",
+        left_color  = RDBMS_COLOR,
+        right_color = DW_COLOR,
+        ylabel      = "Shared read blocks (blocks)",
+        title       = "Chart 6 - Shared Read (Disk I/O): RDBMS vs DW  (lower = less disk access)",
+    )
+    fig.tight_layout()
+    save(fig, out)
+
 def main():
     parser = argparse.ArgumentParser(
         description="Visualise timing benchmark results from benchmark_results.csv"
@@ -185,10 +237,12 @@ def main():
     print(f"  {len(df)} queries loaded.\n")
     print("Generating charts...")
 
-    chart_exec_time (df, figures_dir / "01_execution_time.png")
-    chart_plan_time (df, figures_dir / "02_planning_time.png")
-    chart_speedup   (df, figures_dir / "03_speedup.png")
-    chart_stacked   (df, figures_dir / "04_time_breakdown.png")
+    chart_exec_time  (df, figures_dir / "01_execution_time.png")
+    chart_plan_time  (df, figures_dir / "02_planning_time.png")
+    chart_speedup    (df, figures_dir / "03_speedup.png")
+    chart_stacked    (df, figures_dir / "04_time_breakdown.png")
+    chart_shared_hit (df, figures_dir / "05_shared_hit.png")
+    chart_shared_read(df, figures_dir / "06_shared_read.png")
 
     print(f"\nCharts saved in: {figures_dir}")
 

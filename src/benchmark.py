@@ -38,23 +38,28 @@ def run_explain(conn, sql: str) -> dict:
     with conn.cursor() as cur:
         cur.execute(wrapped)
         rows = [r[0] for r in cur.fetchall()]
-    return _parse_explain(rows)
+    return parse_explain(rows)
 
 
-def _parse_explain(lines: list) -> dict:
+def parse_explain(lines: list) -> dict:
     text = "\n".join(lines)
-    exec_m = re.search(r"Execution Time:\s*([\d.]+)\s*ms", text)
-    plan_m = re.search(r"Planning Time:\s*([\d.]+)\s*ms",  text)
+    exec_m  = re.search(r"Execution Time:\s*([\d.]+)\s*ms", text)
+    plan_m  = re.search(r"Planning Time:\s*([\d.]+)\s*ms",  text)
+    # BUFFERS: accumulate all "shared hit=N" and "shared read=N" across all plan nodes
+    hit_vals  = [int(v) for v in re.findall(r"shared hit=(\d+)",  text)]
+    read_vals = [int(v) for v in re.findall(r"shared read=(\d+)", text)]
     exec_ms = float(exec_m.group(1)) if exec_m else 0.0
     plan_ms = float(plan_m.group(1)) if plan_m else 0.0
     return {
-        "execution_ms": exec_ms,
-        "planning_ms":  plan_ms,
-        "total_ms":     exec_ms + plan_ms,
+        "execution_ms":  exec_ms,
+        "planning_ms":   plan_ms,
+        "total_ms":      exec_ms + plan_ms,
+        "shared_hit":    max(hit_vals)  if hit_vals  else 0,
+        "shared_read":   max(read_vals) if read_vals else 0,
     }
 
 
-def _avg(metric_list: list) -> dict:
+def avg(metric_list: list) -> dict:
     valid = [m for m in metric_list if m is not None]
     if not valid:
         return {}
@@ -83,21 +88,25 @@ def run_benchmark(rdbms_conn, dw_conn, measured_runs=10) -> list:
             except Exception as e:
                 print(f"\n    [DW ERR] {e}"); dm_list.append(None)
 
-        rm = _avg(rm_list)
-        dm = _avg(dm_list)
+        rm = avg(rm_list)
+        dm = avg(dm_list)
 
         r_t = rm.get("total_ms", float("inf"))
         d_t = dm.get("total_ms", float("inf"))
 
         results.append({
-            "query_id":       qid,
-            "label":          label,
-            "rdbms_exec_ms":  round(rm.get("execution_ms", 0), 3),
-            "dw_exec_ms":     round(dm.get("execution_ms", 0), 3),
-            "rdbms_plan_ms":  round(rm.get("planning_ms",  0), 3),
-            "dw_plan_ms":     round(dm.get("planning_ms",  0), 3),
-            "rdbms_total_ms": round(r_t if r_t != float("inf") else 0, 3),
-            "dw_total_ms":    round(d_t if d_t != float("inf") else 0, 3),
+            "query_id":          qid,
+            "label":             label,
+            "rdbms_exec_ms":     round(rm.get("execution_ms", 0), 3),
+            "dw_exec_ms":        round(dm.get("execution_ms", 0), 3),
+            "rdbms_plan_ms":     round(rm.get("planning_ms",  0), 3),
+            "dw_plan_ms":        round(dm.get("planning_ms",  0), 3),
+            "rdbms_total_ms":    round(r_t if r_t != float("inf") else 0, 3),
+            "dw_total_ms":       round(d_t if d_t != float("inf") else 0, 3),
+            "rdbms_shared_hit":  round(rm.get("shared_hit",  0), 1),
+            "dw_shared_hit":     round(dm.get("shared_hit",  0), 1),
+            "rdbms_shared_read": round(rm.get("shared_read", 0), 1),
+            "dw_shared_read":    round(dm.get("shared_read", 0), 1),
         })
 
     return results
