@@ -1,78 +1,40 @@
--- ======================================================
--- GREEN_MOBILITY_RDBMS - Relational Schema
--- ======================================================
--- This schema represents the RDBMS (relational) approach to the
--- same Green Mobility domain modelled as a Star Schema in the DW.
---
--- Key differences from the DW (src/DW/init.sql):
---   - Fully normalized: no redundant attributes in entity tables
---   - Surrogate primary keys (SERIAL) on every entity table
---   - No composite primary keys on fact/association tables
---   - Explicit UNIQUE constraints reflect real-world business keys
---   - Designed for OLTP-style access (individual inserts, updates, deletes)
---   - Analytical queries require more JOIN hops than the DW star schema
--- ======================================================
-
 DROP DATABASE IF EXISTS GREEN_MOBILITY_RDBMS;
 CREATE DATABASE GREEN_MOBILITY_RDBMS;
 
--- ======================================================
--- ENTITY TABLE: Country
--- Stores geographic information about each country.
--- In the DW this is CountryDim - here it is a standalone entity.
--- ======================================================
+-- TABLE: Country
 
 CREATE TABLE Country (
     country_id SERIAL PRIMARY KEY,
-    iso_code CHAR(3) NOT NULL UNIQUE,  -- ISO 3166-1 alpha-3
+    iso_code CHAR(3) NOT NULL UNIQUE,
     country_name VARCHAR(100) NOT NULL,
     continent VARCHAR(50),
     continent_code CHAR(2)
 );
 
--- ======================================================
--- ENTITY TABLE: Year
--- Stores year-level temporal attributes.
--- Equivalent to YearDim in the DW.
--- ======================================================
+-- TABLE: Year
 
 CREATE TABLE Year (
     year_id SERIAL PRIMARY KEY,
     year INT NOT NULL UNIQUE,
-    half_decade VARCHAR(15) NOT NULL,          -- e.g. "2010-2014"
-    pandemic_period VARCHAR(20) NOT NULL           -- "Pre-Pandemic" | "Pandemic" | "Post-Pandemic"
+    half_decade VARCHAR(15) NOT NULL,
+    pandemic_period VARCHAR(20) NOT NULL
 );
 
--- ======================================================
--- ENTITY TABLE: VehicleType
--- Stores distinct vehicle categories (Cars, Buses, Vans, Trucks…).
--- Equivalent to VehicleTypeDim in the DW.
--- ======================================================
+-- TABLE: VehicleType
 
 CREATE TABLE VehicleType (
     vehicle_type_id SERIAL PRIMARY KEY,
     type_name VARCHAR(50) NOT NULL UNIQUE
 );
 
--- ======================================================
--- ENTITY TABLE: Powertrain
--- Stores distinct powertrain technologies (BEV, PHEV, FCEV…).
--- Equivalent to PowertrainDim in the DW.
--- ======================================================
+-- TABLE: Powertrain
 
 CREATE TABLE Powertrain (
     powertrain_id SERIAL PRIMARY KEY,
     powertrain_name VARCHAR(50) NOT NULL UNIQUE
 );
 
--- ======================================================
 -- ASSOCIATION TABLE: EVSales
--- Records annual EV sales, stock and electricity demand
--- broken down by country, year, vehicle type and powertrain.
---
--- DW equivalent: EVMarket fact table (composite PK: keyC+keyY+keyV+keyP).
--- RDBMS difference: surrogate PK + UNIQUE constraint on the natural key.
--- ======================================================
 
 CREATE TABLE EVSales (
     ev_sale_id SERIAL PRIMARY KEY,
@@ -94,11 +56,7 @@ CREATE TABLE EVSales (
     FOREIGN KEY (powertrain_id) REFERENCES Powertrain(powertrain_id)
 );
 
--- ======================================================
--- ASSOCIATION TABLE: EVInfrastructure
--- Records annual charging-point counts per country/year.
--- DW equivalent: EVInfrastructure fact table.
--- ======================================================
+-- TABLE: EVInfrastructure
 
 CREATE TABLE EVInfrastructure (
     infra_id SERIAL PRIMARY KEY,
@@ -115,11 +73,7 @@ CREATE TABLE EVInfrastructure (
     FOREIGN KEY (year_id) REFERENCES Year(year_id),
 );
 
--- ======================================================
--- ASSOCIATION TABLE: EnergyData
--- Records annual electricity generation/consumption per country/year.
--- DW equivalent: CountryEnergy fact table.
--- ======================================================
+-- TABLE: EnergyData
 
 CREATE TABLE CountryEnergy (
     energy_id SERIAL PRIMARY KEY,
@@ -151,11 +105,7 @@ CREATE TABLE CountryEnergy (
     FOREIGN KEY (year_id) REFERENCES Year(year_id)
 );
 
--- ======================================================
--- ASSOCIATION TABLE: MacroeconomicData
--- Records annual population, GDP and CO2 metrics per country/year.
--- DW equivalent: CountryMacroeconomics fact table.
--- ======================================================
+-- TABLE: MacroeconomicData
 
 CREATE TABLE CountryMacroeconomics (
     macro_id SERIAL PRIMARY KEY,
