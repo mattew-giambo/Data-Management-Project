@@ -1,25 +1,3 @@
-"""
-visualize_benchmark.py
-======================
-Reads benchmark_results.csv (produced by benchmark.py) and generates
-timing-focused comparison charts.
-
-Charts produced:
-  1. Grouped bar  - Execution time per query   (RDBMS vs DW)
-  2. Grouped bar  - Planning time per query    (RDBMS vs DW)
-  3. Horizontal bar - DW speedup factor over RDBMS
-  4. Stacked bar  - Planning vs Execution time breakdown (both systems)
-
-Usage
------
-    python src/visualize_benchmark.py
-
-    # Custom CSV path:
-    python src/visualize_benchmark.py --csv path/to/benchmark_results.csv
-
-Output: src/figures/  (one PNG per chart)
-"""
-
 import argparse
 from pathlib import Path
 
@@ -27,10 +5,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-
-# ---------------------------------------------------------------------------
-# Style
-# ---------------------------------------------------------------------------
 
 RDBMS_COLOR  = "#4C72B0"   # blue
 DW_COLOR     = "#DD8452"   # orange
@@ -44,10 +18,7 @@ plt.rcParams.update({
     "axes.spines.right": False,
 })
 
-
-# ---------------------------------------------------------------------------
 # Data loading
-# ---------------------------------------------------------------------------
 
 def load_data(csv_path: Path) -> pd.DataFrame:
     df = pd.read_csv(csv_path)
@@ -55,18 +26,13 @@ def load_data(csv_path: Path) -> pd.DataFrame:
     df["speedup"] = df["rdbms_total_ms"] / df["dw_total_ms"].replace(0, np.nan)
     return df
 
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-def _save(fig: plt.Figure, path: Path):
+def save(fig: plt.Figure, path: Path):
     fig.savefig(path, bbox_inches="tight")
     plt.close(fig)
     print(f"  Saved: {path.name}")
 
 
-def _grouped_bar(ax, x, left_vals, right_vals, left_label, right_label,
+def grouped_bar(ax, x, left_vals, right_vals, left_label, right_label,
                  left_color, right_color, ylabel, title):
     """Draw a labelled grouped bar chart on ax."""
     width = 0.38
@@ -94,13 +60,11 @@ def _grouped_bar(ax, x, left_vals, right_vals, left_label, right_label,
     ax.grid(axis="y", alpha=0.4, zorder=0)
 
 
-# ---------------------------------------------------------------------------
 # Chart 1 - Execution time
-# ---------------------------------------------------------------------------
 
 def chart_exec_time(df: pd.DataFrame, out: Path):
     fig, ax = plt.subplots(figsize=(14, 5))
-    _grouped_bar(
+    grouped_bar(
         ax,
         x            = df["query_id"].tolist(),
         left_vals    = df["rdbms_exec_ms"].values,
@@ -113,16 +77,14 @@ def chart_exec_time(df: pd.DataFrame, out: Path):
         title        = "Chart 1 - Query Execution Time: RDBMS vs DW",
     )
     fig.tight_layout()
-    _save(fig, out)
+    save(fig, out)
 
 
-# ---------------------------------------------------------------------------
 # Chart 2 - Planning time
-# ---------------------------------------------------------------------------
 
 def chart_plan_time(df: pd.DataFrame, out: Path):
     fig, ax = plt.subplots(figsize=(14, 5))
-    _grouped_bar(
+    grouped_bar(
         ax,
         x            = df["query_id"].tolist(),
         left_vals    = df["rdbms_plan_ms"].values,
@@ -135,12 +97,10 @@ def chart_plan_time(df: pd.DataFrame, out: Path):
         title        = "Chart 2 - Query Planning Time: RDBMS vs DW",
     )
     fig.tight_layout()
-    _save(fig, out)
+    save(fig, out)
 
 
-# ---------------------------------------------------------------------------
 # Chart 3 - Speedup horizontal bar
-# ---------------------------------------------------------------------------
 
 def chart_speedup(df: pd.DataFrame, out: Path):
     fig, ax = plt.subplots(figsize=(9, 6))
@@ -164,12 +124,10 @@ def chart_speedup(df: pd.DataFrame, out: Path):
     ax.grid(axis="x", alpha=0.4, zorder=0)
 
     fig.tight_layout()
-    _save(fig, out)
+    save(fig, out)
 
 
-# ---------------------------------------------------------------------------
 # Chart 4 - Stacked planning vs execution time
-# ---------------------------------------------------------------------------
 
 def chart_stacked(df: pd.DataFrame, out: Path):
     fig, axes = plt.subplots(1, 2, figsize=(15, 5), sharey=False)
@@ -199,7 +157,7 @@ def chart_stacked(df: pd.DataFrame, out: Path):
     fig.suptitle("Chart 4 - DBMS vs DW Total Time",
                  fontweight="bold", fontsize=13, y=1.02)
     fig.tight_layout()
-    _save(fig, out)
+    save(fig, out)
 
 def main():
     parser = argparse.ArgumentParser(

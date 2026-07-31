@@ -40,7 +40,7 @@ import psycopg2.extras
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _nan_to_none(value):
+def nan_to_none(value):
     """Convert NaN / Inf to None for PostgreSQL NULL compatibility."""
     if value is None:
         return None
@@ -59,7 +59,7 @@ def get_connection(host, port, dbname, user, password):
 
 
 # ---------------------------------------------------------------------------
-# Lookup-table loaders  (return name → id dicts)
+# Lookup-table loaders  (return name -> id dicts)
 # ---------------------------------------------------------------------------
 
 def load_countries(cur, ev_df: pd.DataFrame, co2_df: pd.DataFrame) -> dict:
@@ -90,13 +90,13 @@ def load_countries(cur, ev_df: pd.DataFrame, co2_df: pd.DataFrame) -> dict:
         cur.execute(sql, (
             row["iso_code"],
             row["country"],
-            _nan_to_none(row.get("continent")),
-            _nan_to_none(row.get("continent_code")),
+            nan_to_none(row.get("continent")),
+            nan_to_none(row.get("continent_code")),
         ))
 
     cur.execute("SELECT country_id, iso_code FROM Country;")
     mapping = {iso: cid for cid, iso in cur.fetchall()}
-    print(f"    → {len(mapping)} countries loaded.")
+    print(f"    -> {len(mapping)} countries loaded.")
     return mapping
 
 
@@ -126,7 +126,7 @@ def load_years(cur, ev_df: pd.DataFrame, co2_df: pd.DataFrame) -> dict:
 
     cur.execute("SELECT year_id, year FROM Year;")
     mapping = {yr: yid for yid, yr in cur.fetchall()}
-    print(f"    → {len(mapping)} years loaded.")
+    print(f"    -> {len(mapping)} years loaded.")
     return mapping
 
 
@@ -143,7 +143,7 @@ def load_vehicle_types(cur, ev_df: pd.DataFrame) -> dict:
         cur.execute(sql, (t,))
     cur.execute("SELECT vehicle_type_id, type_name FROM VehicleType;")
     mapping = {name: vid for vid, name in cur.fetchall()}
-    print(f"    → {len(mapping)} vehicle types loaded.")
+    print(f"    -> {len(mapping)} vehicle types loaded.")
     return mapping
 
 
@@ -160,7 +160,7 @@ def load_powertrains(cur, ev_df: pd.DataFrame) -> dict:
         cur.execute(sql, (p,))
     cur.execute("SELECT powertrain_id, powertrain_name FROM Powertrain;")
     mapping = {name: pid for pid, name in cur.fetchall()}
-    print(f"    → {len(mapping)} powertrains loaded.")
+    print(f"    -> {len(mapping)} powertrains loaded.")
     return mapping
 
 
@@ -194,14 +194,14 @@ def load_ev_sales(cur, ev_df, iso_map, year_map, vt_map, pt_map):
             continue
         rows.append((
             cid, yid, vid, pid,
-            _nan_to_none(row.get("evSales")),
-            _nan_to_none(row.get("evSalesShare")),
-            _nan_to_none(row.get("evStock")),
-            _nan_to_none(row.get("evStockShare")),
-            _nan_to_none(row.get("evElectricityDemand")),
+            nan_to_none(row.get("evSales")),
+            nan_to_none(row.get("evSalesShare")),
+            nan_to_none(row.get("evStock")),
+            nan_to_none(row.get("evStockShare")),
+            nan_to_none(row.get("evElectricityDemand")),
         ))
     psycopg2.extras.execute_batch(cur, sql, rows, page_size=500)
-    print(f"    → {len(rows)} rows inserted (skipped: {skipped}).")
+    print(f"    -> {len(rows)} rows inserted (skipped: {skipped}).")
 
 
 def load_ev_infrastructure(cur, infra_df, iso_map, year_map):
@@ -227,13 +227,13 @@ def load_ev_infrastructure(cur, infra_df, iso_map, year_map):
             continue
         rows.append((
             cid, yid,
-            _nan_to_none(row.get("evChargingPoints")),
-            _nan_to_none(row.get("fastChargingPoints")),
-            _nan_to_none(row.get("slowChargingPoints")),
-            _nan_to_none(row.get("chargingPointsPerEv")),
+            nan_to_none(row.get("evChargingPoints")),
+            nan_to_none(row.get("fastChargingPoints")),
+            nan_to_none(row.get("slowChargingPoints")),
+            nan_to_none(row.get("chargingPointsPerEv")),
         ))
     psycopg2.extras.execute_batch(cur, sql, rows, page_size=500)
-    print(f"    → {len(rows)} rows inserted (skipped: {skipped}).")
+    print(f"    -> {len(rows)} rows inserted (skipped: {skipped}).")
 
 
 def load_energy_data(cur, energy_df, iso_map, year_map):
@@ -284,10 +284,10 @@ def load_energy_data(cur, energy_df, iso_map, year_map):
         if None in (cid, yid):
             skipped += 1
             continue
-        metrics = tuple(_nan_to_none(row.get(c)) for c in metric_cols)
+        metrics = tuple(nan_to_none(row.get(c)) for c in metric_cols)
         rows.append((cid, yid) + metrics)
     psycopg2.extras.execute_batch(cur, sql, rows, page_size=500)
-    print(f"    → {len(rows)} rows inserted (skipped: {skipped}).")
+    print(f"    -> {len(rows)} rows inserted (skipped: {skipped}).")
 
 
 def load_macroeconomic_data(cur, co2_df, iso_map, year_map):
@@ -329,10 +329,10 @@ def load_macroeconomic_data(cur, co2_df, iso_map, year_map):
         if None in (cid, yid):
             skipped += 1
             continue
-        metrics = tuple(_nan_to_none(row.get(c)) for c in metric_cols)
+        metrics = tuple(nan_to_none(row.get(c)) for c in metric_cols)
         rows.append((cid, yid) + metrics)
     psycopg2.extras.execute_batch(cur, sql, rows, page_size=500)
-    print(f"    → {len(rows)} rows inserted (skipped: {skipped}).")
+    print(f"    -> {len(rows)} rows inserted (skipped: {skipped}).")
 
 
 # ---------------------------------------------------------------------------
@@ -348,19 +348,19 @@ def read_clean_datasets(base_path: Path):
 
     print("Reading clean_iea_ev_sales.csv ...")
     ev_df = pd.read_csv(clean_dir / "clean_iea_ev_sales.csv", low_memory=False)
-    print(f"  → {len(ev_df)} rows")
+    print(f"  -> {len(ev_df)} rows")
 
     print("Reading clean_iea_ev_infrastructure.csv ...")
     infra_df = pd.read_csv(clean_dir / "clean_iea_ev_infrastructure.csv", low_memory=False)
-    print(f"  → {len(infra_df)} rows")
+    print(f"  -> {len(infra_df)} rows")
 
     print("Reading clean_owid_co2.csv ...")
     co2_df = pd.read_csv(clean_dir / "clean_owid_co2.csv", low_memory=False)
-    print(f"  → {len(co2_df)} rows")
+    print(f"  -> {len(co2_df)} rows")
 
     print("Reading clean_owid_energy.csv ...")
     energy_df = pd.read_csv(clean_dir / "clean_owid_energy.csv", low_memory=False)
-    print(f"  → {len(energy_df)} rows")
+    print(f"  -> {len(energy_df)} rows")
 
     return ev_df, infra_df, co2_df, energy_df
 

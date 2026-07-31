@@ -1,31 +1,3 @@
-"""
-benchmark.py
-============
-Benchmarks 12 analytical queries on both the RDBMS (green_mobility_rdbms)
-and the DW (green_mobility) databases using EXPLAIN ANALYZE.
-
-Queries are hardcoded from:
-  - src/DW/sql/olap.sql      (DW / OLAP queries)
-  - src/RDBMS/sql/oltp.sql   (RDBMS / relational queries)
-
-Metrics collected per query:
-  - Planning time   (ms)
-  - Execution time  (ms)
-  - Total time      (ms)  ← planning + execution
-
-Output:
-  - Formatted table printed to stdout
-  - src/benchmark_results.csv
-
-Usage
------
-    python src/benchmark.py
-
-    python src/benchmark.py --rdbms-db green_mobility_rdbms \\
-                             --dw-db green_mobility \\
-                             --user postgres --password postgres
-"""
-
 import argparse
 import csv
 import re
@@ -89,9 +61,7 @@ def _avg(metric_list: list) -> dict:
     return {k: sum(m[k] for m in valid) / len(valid) for k in valid[0]}
 
 
-# ============================================================
 # Benchmark runner
-# ============================================================
 
 def run_benchmark(rdbms_conn, dw_conn, measured_runs=10) -> list:
     results = []
@@ -140,12 +110,8 @@ def save_csv(results: list, path: Path):
         writer = csv.DictWriter(f, fieldnames=list(results[0].keys()))
         writer.writeheader()
         writer.writerows(results)
-    print(f"  CSV saved → {path}\n")
-
-
-# ============================================================
-# Entry point
-# ============================================================
+    print(f"  CSV saved -> {path}\n")
+    
 
 def main():
     parser = argparse.ArgumentParser(

@@ -1,47 +1,4 @@
--- ============================================================
--- GREEN_MOBILITY_RDBMS - Relational SQL Queries
--- ============================================================
--- This file contains the RDBMS (relational / 3NF) equivalents
--- of the 12 OLAP queries found in src/DW/olap.sql.
---
--- For each query the following is documented:
---   • The analytical question being answered
---   • Which OLAP feature it replaces and why
---   • The additional complexity introduced by the relational model
---
--- Running context
--- ---------------
---   Database : GREEN_MOBILITY_RDBMS
---   Schema   : src/RDBMS/schema_relazionale.sql
---
--- Comparison summary
--- ------------------
---   OLAP / DW approach          | RDBMS / Relational approach
---   ----------------------------|---------------------------------------
---   ROLLUP / CUBE               | Manual UNION ALL of GROUP BY levels
---   GROUPING SETS               | Multiple GROUP BY + UNION ALL
---   Window functions (LAG/RANK) | Correlated subqueries / self-joins
---   Composite PK fact tables    | Surrogate PK + UNIQUE constraint
---   Denormalized dimensions     | Normalised lookup tables, more JOINs
---   Pre-aggregated star schema  | Full normalisation, heavier at query time
--- ============================================================
-
-
--- ============================================================
--- Query 1: EV Sales by Continent and Year  [RDBMS equivalent of ROLLUP]
--- Question: How have EV sales evolved across continents over time?
---
--- DW version uses:   GROUP BY ROLLUP(continent, year)
---   → automatically generates three levels of aggregation:
---       (continent, year) | (continent, NULL) | (NULL, NULL)
---
--- RDBMS approach:    Three separate GROUP BY queries joined with UNION ALL.
---   → No built-in ROLLUP; each aggregation level must be written explicitly.
---   → More verbose but achieves the same result.
---   → Relational schema requires one extra JOIN hop (Country → iso lookup).
--- ============================================================
-
--- Level 1: detailed (continent, year)
+-- 1: detailed (continent, year)
 SELECT
     c.continent,
     y.year,
@@ -53,7 +10,7 @@ GROUP BY c.continent, y.year
 
 UNION ALL
 
--- Level 2: continent subtotal  (ROLLUP partial aggregate)
+-- 2: continent subtotal  (ROLLUP partial aggregate)
 SELECT
     c.continent,
     NULL::INT                        AS year,
@@ -64,7 +21,7 @@ GROUP BY c.continent
 
 UNION ALL
 
--- Level 3: grand total  (ROLLUP grand aggregate)
+-- 3: grand total  (ROLLUP grand aggregate)
 SELECT
     NULL::VARCHAR                    AS continent,
     NULL::INT                        AS year,
@@ -83,7 +40,7 @@ ORDER BY continent, year;
 --               joined via shared composite keys (keyC, keyY).
 --
 -- RDBMS approach: Same logic, but:
---   - Joins use surrogate keys (country_id, year_id) → identical performance.
+--   - Joins use surrogate keys (country_id, year_id) -> identical performance.
 --   - Additional JOIN to Country and Year for human-readable output.
 --   - No structural complexity difference for this specific query.
 -- ============================================================
@@ -136,12 +93,12 @@ ORDER BY y.year, gdp_class;
 -- Question: Which countries lead EV stock each year?
 --
 -- DW version uses:   RANK() OVER (PARTITION BY year ORDER BY SUM(evStock) DESC)
---   → Window function evaluated in a single pass over the result set.
+--   -> Window function evaluated in a single pass over the result set.
 --
 -- RDBMS approach (option A - correlated subquery):
 --   Emulates RANK() with a correlated subquery that counts how many
 --   countries have a higher stock in the same year.
---   → Correct but O(n²) in the worst case; much slower on large datasets.
+--   -> Correct but O(n²) in the worst case; much slower on large datasets.
 --
 -- RDBMS approach (option B - CTE + self-join):
 --   Pre-aggregate per country/year into a CTE, then self-join to count
@@ -180,12 +137,12 @@ ORDER BY a.year, ranking;
 -- Question: Which vehicle type and powertrain dominate EV sales?
 --
 -- DW version uses:   GROUP BY CUBE(vehicleType, powertrain)
---   → Automatically generates 4 grouping combinations:
+--   -> Automatically generates 4 grouping combinations:
 --       (type, powertrain) | (type, NULL) | (NULL, powertrain) | (NULL, NULL)
 --
 -- RDBMS approach:    Four explicit GROUP BY queries with UNION ALL.
---   → No built-in CUBE operator; every combination must be hand-written.
---   → The query is 4x longer but logically equivalent.
+--   -> No built-in CUBE operator; every combination must be hand-written.
+--   -> The query is 4x longer but logically equivalent.
 -- ============================================================
 
 -- Combination 1: (vehicle_type, powertrain) - most detailed
@@ -259,13 +216,13 @@ ORDER BY y.pandemic_period;
 -- Question: How many charging points did each country add each year?
 --
 -- DW version uses:   LAG(evChargingPoints) OVER (PARTITION BY country ORDER BY year)
---   → Window function: accesses the previous row's value in a single scan.
+--   -> Window function: accesses the previous row's value in a single scan.
 --
 -- RDBMS approach:    Correlated subquery (self-join on EVInfrastructure)
 --   to retrieve the previous year's value for the same country.
---   → Requires an additional join or subquery per row.
---   → Functionally identical, but typically slower than LAG().
---   → Demonstrates the expressive gap between OLAP and relational SQL.
+--   -> Requires an additional join or subquery per row.
+--   -> Functionally identical, but typically slower than LAG().
+--   -> Demonstrates the expressive gap between OLAP and relational SQL.
 -- ============================================================
 
 SELECT
@@ -333,11 +290,11 @@ ORDER BY c.country_name, y.year;
 --                        (pandemicPeriod),
 --                        ()
 --                    )
---   → Four grouping levels in one pass.
+--   -> Four grouping levels in one pass.
 --
 -- RDBMS approach:    Four UNION ALL blocks, one per grouping level.
---   → Identical data is scanned four times (less efficient).
---   → Demonstrates why GROUPING SETS is a major OLAP productivity feature.
+--   -> Identical data is scanned four times (less efficient).
+--   -> Demonstrates why GROUPING SETS is a major OLAP productivity feature.
 -- ============================================================
 
 -- Level 1: (continent, pandemic_period)

@@ -5,9 +5,7 @@ import numpy as np
 from typing import Optional
 
 
-# ---------------------------------------------------------------------------
-# Connection helper
-# ---------------------------------------------------------------------------
+# Connection
 
 def get_connection(
     host: str = "localhost",
@@ -29,7 +27,7 @@ def get_connection(
     return conn
 
 
-def _nan_to_none(value):
+def nan_to_none(value):
     """Converts NaN / Inf values to None for PostgreSQL NULL compatibility."""
     if value is None:
         return None
@@ -41,11 +39,9 @@ def _nan_to_none(value):
     return value
 
 
-# ---------------------------------------------------------------------------
 # Dimension loaders
-# ---------------------------------------------------------------------------
 
-def _load_country_dim(cur, ev_df: pd.DataFrame, co2_df: pd.DataFrame) -> dict:
+def load_country_dim(cur, ev_df: pd.DataFrame, co2_df: pd.DataFrame) -> dict:
     """
     Populates CountryDim and returns a dictionary mapping isoCode to keyC.
     """
@@ -72,19 +68,19 @@ def _load_country_dim(cur, ev_df: pd.DataFrame, co2_df: pd.DataFrame) -> dict:
         cur.execute(sql, (
             row["country"],
             row["isoCode"],
-            _nan_to_none(row.get("continent")),
-            _nan_to_none(row.get("continentCode")),
+            nan_to_none(row.get("continent")),
+            nan_to_none(row.get("continentCode")),
         ))
 
     cur.execute("SELECT keyC, isoCode FROM CountryDim;")
     for key_c, iso in cur.fetchall():
         iso_to_key[iso] = key_c
 
-    print(f"    → {len(iso_to_key)} countries in CountryDim.")
+    print(f"    -> {len(iso_to_key)} countries in CountryDim.")
     return iso_to_key
 
 
-def _load_year_dim(cur, ev_df: pd.DataFrame, co2_df: pd.DataFrame) -> dict:
+def load_year_dim(cur, ev_df: pd.DataFrame, co2_df: pd.DataFrame) -> dict:
     """
     Populates YearDim and returns a dictionary mapping year to keyY.
     """
@@ -110,11 +106,11 @@ def _load_year_dim(cur, ev_df: pd.DataFrame, co2_df: pd.DataFrame) -> dict:
     cur.execute("SELECT keyY, year FROM YearDim;")
     year_to_key = {year: key_y for key_y, year in cur.fetchall()}
 
-    print(f"    → {len(year_to_key)} years in YearDim.")
+    print(f"    -> {len(year_to_key)} years in YearDim.")
     return year_to_key
 
 
-def _load_vehicle_type_dim(cur, ev_df: pd.DataFrame) -> dict:
+def load_vehicle_type_dim(cur, ev_df: pd.DataFrame) -> dict:
     """
     Populates VehicleTypeDim and returns a dictionary mapping vehicleType to keyV.
     """
@@ -134,11 +130,11 @@ def _load_vehicle_type_dim(cur, ev_df: pd.DataFrame) -> dict:
     cur.execute("SELECT keyV, vehicleType FROM VehicleTypeDim;")
     vt_to_key = {vt: key_v for key_v, vt in cur.fetchall()}
 
-    print(f"    → {len(vt_to_key)} vehicle types in VehicleTypeDim.")
+    print(f"    -> {len(vt_to_key)} vehicle types in VehicleTypeDim.")
     return vt_to_key
 
 
-def _load_powertrain_dim(cur, ev_df: pd.DataFrame) -> dict:
+def load_powertrain_dim(cur, ev_df: pd.DataFrame) -> dict:
     """
     Populates PowertrainDim and returns a dictionary mapping powertrain to keyP.
     """
@@ -158,15 +154,13 @@ def _load_powertrain_dim(cur, ev_df: pd.DataFrame) -> dict:
     cur.execute("SELECT keyP, powertrain FROM PowertrainDim;")
     pt_to_key = {pt: key_p for key_p, pt in cur.fetchall()}
 
-    print(f"    → {len(pt_to_key)} powertrains in PowertrainDim.")
+    print(f"    -> {len(pt_to_key)} powertrains in PowertrainDim.")
     return pt_to_key
 
 
-# ---------------------------------------------------------------------------
 # Fact table loaders
-# ---------------------------------------------------------------------------
 
-def _load_ev_market(
+def load_ev_market(
     cur,
     ev_df: pd.DataFrame,
     iso_to_key: dict,
@@ -206,18 +200,18 @@ def _load_ev_market(
 
         rows.append((
             key_c, key_y, key_v, key_p,
-            _nan_to_none(row.get("evSales")),
-            _nan_to_none(row.get("evSalesShare")),
-            _nan_to_none(row.get("evStock")),
-            _nan_to_none(row.get("evStockShare")),
-            _nan_to_none(row.get("evElectricityDemand")),
+            nan_to_none(row.get("evSales")),
+            nan_to_none(row.get("evSalesShare")),
+            nan_to_none(row.get("evStock")),
+            nan_to_none(row.get("evStockShare")),
+            nan_to_none(row.get("evElectricityDemand")),
         ))
 
     psycopg2.extras.execute_batch(cur, sql, rows, page_size=500)
-    print(f"    → {len(rows)} rows inserted into EVMarket (skipped: {skipped}).")
+    print(f"    -> {len(rows)} rows inserted into EVMarket (skipped: {skipped}).")
 
 
-def _load_ev_infrastructure(
+def load_ev_infrastructure(
     cur,
     infra_df: pd.DataFrame,
     iso_to_key: dict,
@@ -252,17 +246,17 @@ def _load_ev_infrastructure(
 
         rows.append((
             key_c, key_y,
-            _nan_to_none(row.get("evChargingPoints")),
-            _nan_to_none(row.get("fastChargingPoints")),
-            _nan_to_none(row.get("slowChargingPoints")),
-            _nan_to_none(row.get("chargingPointsPerEv")),
+            nan_to_none(row.get("evChargingPoints")),
+            nan_to_none(row.get("fastChargingPoints")),
+            nan_to_none(row.get("slowChargingPoints")),
+            nan_to_none(row.get("chargingPointsPerEv")),
         ))
 
     psycopg2.extras.execute_batch(cur, sql, rows, page_size=500)
-    print(f"    → {len(rows)} rows inserted into EVInfrastructure (skipped: {skipped}).")
+    print(f"    -> {len(rows)} rows inserted into EVInfrastructure (skipped: {skipped}).")
 
 
-def _load_country_energy(
+def load_country_energy(
     cur,
     energy_df: pd.DataFrame,
     iso_to_key: dict,
@@ -324,14 +318,14 @@ def _load_country_energy(
             skipped += 1
             continue
 
-        metric_values = tuple(_nan_to_none(row.get(col)) for col in energy_metric_cols)
+        metric_values = tuple(nan_to_none(row.get(col)) for col in energy_metric_cols)
         rows.append((key_c, key_y) + metric_values)
 
     psycopg2.extras.execute_batch(cur, sql, rows, page_size=500)
-    print(f"    → {len(rows)} rows inserted into CountryEnergy (skipped: {skipped}).")
+    print(f"    -> {len(rows)} rows inserted into CountryEnergy (skipped: {skipped}).")
 
 
-def _load_country_macroeconomics(
+def load_country_macroeconomics(
     cur,
     co2_df: pd.DataFrame,
     iso_to_key: dict,
@@ -384,16 +378,14 @@ def _load_country_macroeconomics(
             skipped += 1
             continue
 
-        metric_values = tuple(_nan_to_none(row.get(col)) for col in macro_metric_cols)
+        metric_values = tuple(nan_to_none(row.get(col)) for col in macro_metric_cols)
         rows.append((key_c, key_y) + metric_values)
 
     psycopg2.extras.execute_batch(cur, sql, rows, page_size=500)
-    print(f"    → {len(rows)} rows inserted into CountryMacroeconomics (skipped: {skipped}).")
+    print(f"    -> {len(rows)} rows inserted into CountryMacroeconomics (skipped: {skipped}).")
 
 
-# ---------------------------------------------------------------------------
-# Main public function
-# ---------------------------------------------------------------------------
+# Main function
 
 def insert_to_db(
     ev_df: pd.DataFrame,
@@ -419,16 +411,16 @@ def insert_to_db(
             with conn.cursor() as cur:
 
                 # Dimension tables
-                iso_to_key  = _load_country_dim(cur, ev_df, co2_df)
-                year_to_key = _load_year_dim(cur, ev_df, co2_df)
-                vt_to_key   = _load_vehicle_type_dim(cur, ev_df)
-                pt_to_key   = _load_powertrain_dim(cur, ev_df)
+                iso_to_key  = load_country_dim(cur, ev_df, co2_df)
+                year_to_key = load_year_dim(cur, ev_df, co2_df)
+                vt_to_key   = load_vehicle_type_dim(cur, ev_df)
+                pt_to_key   = load_powertrain_dim(cur, ev_df)
 
                 # Fact tables
-                _load_ev_market(cur, ev_df, iso_to_key, year_to_key, vt_to_key, pt_to_key)
-                _load_ev_infrastructure(cur, infra_df, iso_to_key, year_to_key)
-                _load_country_energy(cur, energy_df, iso_to_key, year_to_key)
-                _load_country_macroeconomics(cur, co2_df, iso_to_key, year_to_key)
+                load_ev_market(cur, ev_df, iso_to_key, year_to_key, vt_to_key, pt_to_key)
+                load_ev_infrastructure(cur, infra_df, iso_to_key, year_to_key)
+                load_country_energy(cur, energy_df, iso_to_key, year_to_key)
+                load_country_macroeconomics(cur, co2_df, iso_to_key, year_to_key)
 
         print("=== Database insertion completed successfully! ===\n")
 

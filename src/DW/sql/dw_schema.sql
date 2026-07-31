@@ -1,9 +1,7 @@
-DROP DATABASE IF EXISTS GREEN_MOBILITY;
-CREATE DATABASE GREEN_MOBILITY;
+-- DROP DATABASE IF EXISTS GREEN_MOBILITY;
+-- CREATE DATABASE GREEN_MOBILITY;
 
--- ======================================================
 -- DIMENSION TABLES
--- ======================================================
 
 CREATE TABLE CountryDim (
     keyC SERIAL PRIMARY KEY,
@@ -30,9 +28,7 @@ CREATE TABLE PowertrainDim (
     powertrain VARCHAR(50) NOT NULL UNIQUE
 );
 
--- ======================================================
 -- FACT TABLE: EV MARKET
--- ======================================================
 
 CREATE TABLE EVMarket (
 
@@ -55,9 +51,7 @@ CREATE TABLE EVMarket (
     FOREIGN KEY (keyP) REFERENCES PowertrainDim(keyP)
 );
 
--- ======================================================
 -- FACT TABLE: EV INFRASTRUCTURE
--- ======================================================
 
 CREATE TABLE EVInfrastructure (
 
@@ -75,9 +69,7 @@ CREATE TABLE EVInfrastructure (
     FOREIGN KEY (keyY) REFERENCES YearDim(keyY)
 );
 
--- ======================================================
 -- FACT TABLE: COUNTRY ENERGY
--- ======================================================
 
 CREATE TABLE CountryEnergy (
 
@@ -110,9 +102,7 @@ CREATE TABLE CountryEnergy (
     FOREIGN KEY (keyY) REFERENCES YearDim(keyY)
 );
 
--- ======================================================
 -- FACT TABLE: COUNTRY MACROECONOMICS
--- ======================================================
 
 CREATE TABLE CountryMacroeconomics (
 
