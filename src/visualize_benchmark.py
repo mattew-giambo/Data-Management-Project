@@ -5,10 +5,10 @@ Reads benchmark_results.csv (produced by benchmark.py) and generates
 timing-focused comparison charts.
 
 Charts produced:
-  1. Grouped bar  — Execution time per query   (RDBMS vs DW)
-  2. Grouped bar  — Planning time per query    (RDBMS vs DW)
-  3. Horizontal bar — DW speedup factor over RDBMS
-  4. Stacked bar  — Planning vs Execution time breakdown (both systems)
+  1. Grouped bar  - Execution time per query   (RDBMS vs DW)
+  2. Grouped bar  - Planning time per query    (RDBMS vs DW)
+  3. Horizontal bar - DW speedup factor over RDBMS
+  4. Stacked bar  - Planning vs Execution time breakdown (both systems)
 
 Usage
 -----
@@ -95,7 +95,7 @@ def _grouped_bar(ax, x, left_vals, right_vals, left_label, right_label,
 
 
 # ---------------------------------------------------------------------------
-# Chart 1 — Execution time
+# Chart 1 - Execution time
 # ---------------------------------------------------------------------------
 
 def chart_exec_time(df: pd.DataFrame, out: Path):
@@ -110,14 +110,14 @@ def chart_exec_time(df: pd.DataFrame, out: Path):
         left_color   = RDBMS_COLOR,
         right_color  = DW_COLOR,
         ylabel       = "Execution time (ms)",
-        title        = "Chart 1 — Query Execution Time: RDBMS vs DW",
+        title        = "Chart 1 - Query Execution Time: RDBMS vs DW",
     )
     fig.tight_layout()
     _save(fig, out)
 
 
 # ---------------------------------------------------------------------------
-# Chart 2 — Planning time
+# Chart 2 - Planning time
 # ---------------------------------------------------------------------------
 
 def chart_plan_time(df: pd.DataFrame, out: Path):
@@ -132,14 +132,14 @@ def chart_plan_time(df: pd.DataFrame, out: Path):
         left_color   = RDBMS_COLOR,
         right_color  = DW_COLOR,
         ylabel       = "Planning time (ms)",
-        title        = "Chart 2 — Query Planning Time: RDBMS vs DW",
+        title        = "Chart 2 - Query Planning Time: RDBMS vs DW",
     )
     fig.tight_layout()
     _save(fig, out)
 
 
 # ---------------------------------------------------------------------------
-# Chart 3 — Speedup horizontal bar
+# Chart 3 - Speedup horizontal bar
 # ---------------------------------------------------------------------------
 
 def chart_speedup(df: pd.DataFrame, out: Path):
@@ -158,7 +158,7 @@ def chart_speedup(df: pd.DataFrame, out: Path):
                 color=DW_COLOR if val >= 1 else RDBMS_COLOR)
 
     ax.set_xlabel("Speedup factor  (RDBMS total ms / DW total ms)")
-    ax.set_title("Chart 3 — DW Speedup over RDBMS (total time)",
+    ax.set_title("Chart 3 - DW Speedup over RDBMS (total time)",
                  fontweight="bold", pad=10)
     ax.legend(frameon=False)
     ax.grid(axis="x", alpha=0.4, zorder=0)
@@ -168,7 +168,7 @@ def chart_speedup(df: pd.DataFrame, out: Path):
 
 
 # ---------------------------------------------------------------------------
-# Chart 4 — Stacked planning vs execution time
+# Chart 4 - Stacked planning vs execution time
 # ---------------------------------------------------------------------------
 
 def chart_stacked(df: pd.DataFrame, out: Path):
@@ -196,7 +196,7 @@ def chart_stacked(df: pd.DataFrame, out: Path):
         ax.legend(frameon=False)
         ax.grid(axis="y", alpha=0.4, zorder=0)
 
-    fig.suptitle("Chart 4 — DBMS vs DW Total Time",
+    fig.suptitle("Chart 4 - DBMS vs DW Total Time",
                  fontweight="bold", fontsize=13, y=1.02)
     fig.tight_layout()
     _save(fig, out)

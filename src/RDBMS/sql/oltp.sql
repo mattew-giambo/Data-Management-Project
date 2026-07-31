@@ -1,5 +1,5 @@
 -- ============================================================
--- GREEN_MOBILITY_RDBMS — Relational SQL Queries
+-- GREEN_MOBILITY_RDBMS - Relational SQL Queries
 -- ============================================================
 -- This file contains the RDBMS (relational / 3NF) equivalents
 -- of the 12 OLAP queries found in src/DW/olap.sql.
@@ -103,13 +103,13 @@ ORDER BY y.year, e.renewable_electricity_generation DESC;
 
 
 -- ============================================================
--- Query 3: Rich vs Poor Countries — EV Adoption by GDP class
+-- Query 3: Rich vs Poor Countries - EV Adoption by GDP class
 -- Question: Do richer countries have higher EV adoption?
 --
 -- DW version:   Joins CountryMacroeconomics + EVMarket + YearDim.
 --               GDP classification done with a CASE expression.
 --
--- RDBMS approach: Structurally identical — the CASE classification
+-- RDBMS approach: Structurally identical - the CASE classification
 --   works the same way. The only difference is the table names and
 --   the surrogate-key join pattern.
 -- ============================================================
@@ -132,20 +132,20 @@ ORDER BY y.year, gdp_class;
 
 
 -- ============================================================
--- Query 4: Top Countries by EV Stock — Annual Ranking
+-- Query 4: Top Countries by EV Stock - Annual Ranking
 -- Question: Which countries lead EV stock each year?
 --
 -- DW version uses:   RANK() OVER (PARTITION BY year ORDER BY SUM(evStock) DESC)
 --   → Window function evaluated in a single pass over the result set.
 --
--- RDBMS approach (option A — correlated subquery):
+-- RDBMS approach (option A - correlated subquery):
 --   Emulates RANK() with a correlated subquery that counts how many
 --   countries have a higher stock in the same year.
 --   → Correct but O(n²) in the worst case; much slower on large datasets.
 --
--- RDBMS approach (option B — CTE + self-join):
+-- RDBMS approach (option B - CTE + self-join):
 --   Pre-aggregate per country/year into a CTE, then self-join to count
---   peers with a higher value.  Shown below — more readable than option A.
+--   peers with a higher value.  Shown below - more readable than option A.
 --
 -- Note: Modern PostgreSQL supports window functions in plain SQL too,
 --   but the RDBMS canonical approach relies on subqueries / self-joins.
@@ -188,7 +188,7 @@ ORDER BY a.year, ranking;
 --   → The query is 4x longer but logically equivalent.
 -- ============================================================
 
--- Combination 1: (vehicle_type, powertrain) — most detailed
+-- Combination 1: (vehicle_type, powertrain) - most detailed
 SELECT
     vt.type_name                        AS vehicle_type,
     pt.powertrain_name                  AS powertrain,
@@ -200,7 +200,7 @@ GROUP BY vt.type_name, pt.powertrain_name
 
 UNION ALL
 
--- Combination 2: (vehicle_type, NULL) — subtotal by type
+-- Combination 2: (vehicle_type, NULL) - subtotal by type
 SELECT
     vt.type_name,
     NULL         AS powertrain,
@@ -211,7 +211,7 @@ GROUP BY vt.type_name
 
 UNION ALL
 
--- Combination 3: (NULL, powertrain) — subtotal by powertrain
+-- Combination 3: (NULL, powertrain) - subtotal by powertrain
 SELECT
     NULL                      AS vehicle_type,
     pt.powertrain_name,
@@ -222,7 +222,7 @@ GROUP BY pt.powertrain_name
 
 UNION ALL
 
--- Combination 4: (NULL, NULL) — grand total
+-- Combination 4: (NULL, NULL) - grand total
 SELECT
     NULL                       AS vehicle_type,
     NULL                       AS powertrain,
@@ -239,7 +239,7 @@ ORDER BY vehicle_type, powertrain;
 -- DW version:   Joins EVMarket + YearDim, groups by pandemicPeriod
 --               (a denormalized attribute stored directly in YearDim).
 --
--- RDBMS approach: Structurally identical — pandemic_period is also
+-- RDBMS approach: Structurally identical - pandemic_period is also
 --   stored in the Year lookup table. No difference in complexity here.
 --   This illustrates that not all OLAP features are harder in RDBMS;
 --   simple GROUP BY aggregations translate directly.
@@ -390,7 +390,7 @@ ORDER BY continent, pandemic_period;
 --
 -- DW version:   Simple arithmetic on CountryEnergy columns.
 --
--- RDBMS approach: Structurally identical — both join to a data table
+-- RDBMS approach: Structurally identical - both join to a data table
 --   that holds renewable_electricity_generation and electricity_generation.
 --   No functional difference; demonstrates that simple ratio queries
 --   are equally expressive in both paradigms.
@@ -417,7 +417,7 @@ ORDER BY c.country_name, y.year;
 --
 -- DW version:   MIN / MAX aggregation on EVMarket.
 --
--- RDBMS approach: Same aggregation logic — MIN/MAX work the same.
+-- RDBMS approach: Same aggregation logic - MIN/MAX work the same.
 --   The only difference is the JOIN path through surrogate keys.
 --   Demonstrates that standard aggregations translate directly.
 -- ============================================================

@@ -1,5 +1,5 @@
 # RDBMS vs Data Warehouse: A Comparative Performance and Architectural Analysis
-### Data Management Project — Task 2
+### Data Management Project - Task 2
 
 ---
 
@@ -132,20 +132,20 @@ The performance difference is particularly noticeable in complex analytical quer
 
 ### 4.1 Scenario 1: Significant Data Warehouse Victories (High Speedup)
 
-**Q4 — Top Countries by EV Stock (RANK window function)**: The DW executes in **2.59 ms** versus **9.97 ms** for the RDBMS — a speedup of **3.85x**. The DW uses PostgreSQL's built-in `RANK() OVER (PARTITION BY year ORDER BY SUM(evStock) DESC)` evaluated in a single pass over the fact table. The RDBMS equivalent requires a CTE materialisation followed by a self-join (`stock_by_country a LEFT JOIN stock_by_country b`) to count the number of countries with a higher stock in the same year. This is inherently O(n²) in the worst case and results in more join nodes in the query plan (2 vs 2, but with a much heavier self-join overhead).
+**Q4 - Top Countries by EV Stock (RANK window function)**: The DW executes in **2.59 ms** versus **9.97 ms** for the RDBMS - a speedup of **3.85x**. The DW uses PostgreSQL's built-in `RANK() OVER (PARTITION BY year ORDER BY SUM(evStock) DESC)` evaluated in a single pass over the fact table. The RDBMS equivalent requires a CTE materialisation followed by a self-join (`stock_by_country a LEFT JOIN stock_by_country b`) to count the number of countries with a higher stock in the same year. This is inherently O(n²) in the worst case and results in more join nodes in the query plan (2 vs 2, but with a much heavier self-join overhead).
 
-**Q5 — Vehicle Type Analysis (CUBE)**: The DW completes in **2.86 ms** versus **6.86 ms** — a speedup of **2.39x**. The DW uses `GROUP BY CUBE(vehicleType, powertrain)`, which generates all four grouping combinations in a single scan of the `EVMarket` table (1 aggregation node). The RDBMS version must issue four separate `GROUP BY` queries connected by `UNION ALL`, resulting in 8 sequential scans and 4 aggregation nodes.
+**Q5 - Vehicle Type Analysis (CUBE)**: The DW completes in **2.86 ms** versus **6.86 ms** - a speedup of **2.39x**. The DW uses `GROUP BY CUBE(vehicleType, powertrain)`, which generates all four grouping combinations in a single scan of the `EVMarket` table (1 aggregation node). The RDBMS version must issue four separate `GROUP BY` queries connected by `UNION ALL`, resulting in 8 sequential scans and 4 aggregation nodes.
 
-**Q9 — Continent x Pandemic Period (GROUPING SETS)**: The DW executes in **2.91 ms** versus **4.48 ms** — a speedup of **1.54x**. Similar to Q5, `GROUPING SETS` processes all four grouping levels in one pass, while the RDBMS requires four `UNION ALL` blocks scanning the data multiple times.
+**Q9 - Continent x Pandemic Period (GROUPING SETS)**: The DW executes in **2.91 ms** versus **4.48 ms** - a speedup of **1.54x**. Similar to Q5, `GROUPING SETS` processes all four grouping levels in one pass, while the RDBMS requires four `UNION ALL` blocks scanning the data multiple times.
 
 ### 4.2 Queries Where the Two Approaches Are Comparable
 
 **Q2, Q6, Q7, Q8, Q10, Q11**: These queries use standard SQL constructs (simple `GROUP BY`, arithmetic ratios, `MIN/MAX` aggregations, multi-table joins) that translate directly between the two paradigms with no structural disadvantage on either side. The speedup differences are all below 1.25x and could be attributed to minor variance in buffer cache state rather than a genuine architectural advantage.
 
-**Q12 — Is EV Adoption Reducing $CO_2$?**: Interestingly, the RDBMS is marginally faster here (**6.21 ms** vs **6.68 ms**). Both versions perform a three-fact-table join of identical logical complexity. The RDBMS planner may have produced a slightly more efficient join order given the surrogate key statistics available to it.
+**Q12 - Is EV Adoption Reducing $CO_2$?**: Interestingly, the RDBMS is marginally faster here (**6.21 ms** vs **6.68 ms**). Both versions perform a three-fact-table join of identical logical complexity. The RDBMS planner may have produced a slightly more efficient join order given the surrogate key statistics available to it.
 
 ### 4.3 The RDBMS Win: Q6
-**Q6 — Pandemic Impact** is the only query where the RDBMS is clearly faster (**1.39 ms** vs **1.77 ms**). This is a very simple single-table aggregation (`AVG(ev_sales_share) GROUP BY pandemic_period`). The RDBMS stores `pandemic_period` directly in the `Year` lookup table; the DW stores it in `YearDim`. Both schemas require one join, and the slight RDBMS advantage here is likely due to the smaller number of rows in `EVSales` compared to `EVMarket` after filtering, combined with random variation.
+**Q6 - Pandemic Impact** is the only query where the RDBMS is clearly faster (**1.39 ms** vs **1.77 ms**). This is a very simple single-table aggregation (`AVG(ev_sales_share) GROUP BY pandemic_period`). The RDBMS stores `pandemic_period` directly in the `Year` lookup table; the DW stores it in `YearDim`. Both schemas require one join, and the slight RDBMS advantage here is likely due to the smaller number of rows in `EVSales` compared to `EVMarket` after filtering, combined with random variation.
 
 ---
 

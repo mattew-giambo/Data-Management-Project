@@ -1,5 +1,5 @@
 -- ======================================================
--- GREEN_MOBILITY_RDBMS — Relational Schema
+-- GREEN_MOBILITY_RDBMS - Relational Schema
 -- ======================================================
 -- This schema represents the RDBMS (relational) approach to the
 -- same Green Mobility domain modelled as a Star Schema in the DW.
@@ -19,7 +19,7 @@ CREATE DATABASE GREEN_MOBILITY_RDBMS;
 -- ======================================================
 -- ENTITY TABLE: Country
 -- Stores geographic information about each country.
--- In the DW this is CountryDim — here it is a standalone entity.
+-- In the DW this is CountryDim - here it is a standalone entity.
 -- ======================================================
 
 CREATE TABLE Country (
