@@ -564,7 +564,7 @@ Eleven analytical queries (Q1 to Q11) were designed to examine this problem from
 
 # 7. Architectural Comparison: RDBMS vs. DW (Star Schema)
 
-## 7.1 The Relational RDBMS Approach (3NF)
+## 7.1 The Relational RDBMS Approach
 
 The relational schema ([`src/RDBMS/sql/relational_schema.sql`](src/RDBMS/sql/relational_schema.sql)) adheres to Third Normal Form. Every entity is normalized in its own table, and referential integrity is enforced through foreign keys and surrogate primary keys (`SERIAL`). The tables are:
 
