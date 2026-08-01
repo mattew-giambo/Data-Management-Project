@@ -1,9 +1,13 @@
 # Green Mobility - Data Management Project
-### MSc in Computer Science
-
-> A dimensional data warehouse and RDBMS comparative study built to investigate whether the global rise of electric vehicles is actually reducing carbon emissions, or simply shifting them from the tailpipe to the power plant.
+### Course Information
+* **Institution:** Sapienza University of Rome
+* **Course:** Data Management (M.Sc. in Engineering in Computer Science & Artificial Intelligence)
+* **Academic Year:** 2025/2026
+* **Authors:** Casolino Ilaria 2079322, Giamberardini Matteo 2045678
 
 ---
+
+> A dimensional data warehouse and RDBMS comparative study built to investigate whether the global rise of electric vehicles is actually reducing carbon emissions, or simply shifting them from the tailpipe to the power plant.
 
 ## Table of Contents
 
@@ -13,14 +17,13 @@
 3. [Data Warehousing & Methodology](#3-data-warehousing--methodology)
 4. [Final Datasets & Attribute Dictionary](#4-final-datasets--attribute-dictionary)
 5. [OLAP Queries & Analytical Insights](#5-olap-queries--analytical-insights)
-6. [Project Structure](#6-project-structure)
 
 ### Task 2 - RDBMS vs. Data Warehouse Comparative Analysis
-7. [Problem Definition & Domain Context](#7-problem-definition--domain-context)
-8. [Architectural Comparison: RDBMS vs. DW](#8-architectural-comparison-rdbms-vs-dw-star-schema)
-9. [Benchmark Methodology & Results](#9-benchmark-methodology--results)
-10. [Architectural Trade-offs & Discussion](#10-architectural-trade-offs--discussion)
-11. [Conclusions](#11-conclusions)
+6. [Problem Definition & Domain Context](#7-problem-definition--domain-context)
+7. [Architectural Comparison: RDBMS vs. DW](#8-architectural-comparison-rdbms-vs-dw-star-schema)
+8. [Benchmark Methodology & Results](#9-benchmark-methodology--results)
+9. [Architectural Trade-offs & Discussion](#10-architectural-trade-offs--discussion)
+10. [Conclusions](#11-conclusions)
 
 ---
 
@@ -170,7 +173,7 @@ The final validation confirmed complete geographic coverage. All 50 ISO codes pr
 
 ## 3.1 Design Approach
 
-![DFM Schema](DFM%20Schema/assets/DFM.png)
+![DFM Schema](Schemas/assets/DFM.png)
 
 The Data Warehouse was designed following the **Dimensional Fact Model (DFM)** methodology. According to the DFM, the first step is to identify the facts, the measures associated with each fact, and the dimensions that are used to analyse and aggregate the data. After the conceptual design, the model can be translated into the logical schema.
 
@@ -184,7 +187,7 @@ To avoid this problem, the Data Warehouse uses a **Multi-Fact Star Schema** with
 
 The logical schema, implemented in `src/DW/init.sql`, follows the **Star Schema** model. It includes four dimension tables and four fact tables.
 
-![Star Schema](DFM%20Schema/assets/star.png)
+![Star Schema](Schemas/assets/star.png)
 
 ### Dimension Tables
 
@@ -528,62 +531,6 @@ The most analytically central query of the project. It directly integrates all t
 
 ---
 
-# 6. Project Structure
-
-### 6.1 Repository Map
-
-```
-│
-├── raw_datasets/
-│   ├── iea-global-ev-sales.csv
-│   ├── owid-co2-data.csv
-│   ├── owid-energy-data.csv
-│   ├── continent_country.csv
-│   ├── gdp_population_countries.csv
-│   └── release_generation_yearly_global.csv
-│
-├── clean_datasets/
-│   ├── clean_iea_ev_sales.csv
-│   ├── clean_iea_ev_infrastructure.csv
-│   ├── clean_owid_co2.csv
-│   └── clean_owid_energy.csv
-│
-├── src/
-│   ├── etl.py
-│   └── utility/
-│       ├── extract.py
-│       ├── transform.py
-│       ├── load.py
-│       └── db_loader.py
-│
-├── src/DW/
-│   ├── init.sql
-│   └── olap.sql
-│
-├── src/RDBMS/
-│   ├── sql/
-│   │   └── relational_schema.sql
-│   ├── load_db.py
-│   └── REPORT.md
-│
-├── DFM Schema/
-│   ├── DFM_star.excalidraw
-│   └── assets/
-│       ├── DFM.png
-│       ├── DFM_star.png
-│       └── star.png
-│
-├── benchmark.py
-├── benchmark_results.csv
-├── datasets_presentation.md
-├── data_profiling_and_cleaning_report.md
-└── README.md
-```
-
----
-
----
-
 # Task 2 - RDBMS vs. Data Warehouse: A Comparative Performance and Architectural Analysis
 
 > This section documents **Task 2** of the Data Management project, which required identifying a data analysis problem and comparing two different technological approaches to address it. The chosen domain is **green mobility and energy transition**, and the comparison is drawn between:
@@ -596,7 +543,7 @@ Overall, the Data Warehouse star schema outperformed the 3NF relational database
 
 ---
 
-# 7. Problem Definition & Domain Context
+# 6. Problem Definition & Domain Context
 
 The core research question driving this comparative analysis is:
 
@@ -615,11 +562,13 @@ Eleven analytical queries (Q1 to Q11) were designed to examine this problem from
 
 ---
 
-# 8. Architectural Comparison: RDBMS vs. DW (Star Schema)
+# 7. Architectural Comparison: RDBMS vs. DW (Star Schema)
 
-## 8.1 The Relational RDBMS Approach (3NF)
+## 7.1 The Relational RDBMS Approach (3NF)
 
 The relational schema ([`src/RDBMS/sql/relational_schema.sql`](src/RDBMS/sql/relational_schema.sql)) adheres to Third Normal Form. Every entity is normalized in its own table, and referential integrity is enforced through foreign keys and surrogate primary keys (`SERIAL`). The tables are:
+
+![RDBMS Schema](Schemas/assets/RDBMS%20Schema.png)
 
 | Table | Role |
 |---|---|
@@ -638,7 +587,7 @@ Data was loaded into the RDBMS using the standalone Python script [`src/RDBMS/lo
 
 ---
 
-## 8.2 The Data Warehouse Approach (Star Schema)
+## 7.2 The Data Warehouse Approach (Star Schema)
 
 The Data Warehouse schema (`green_mobility`) organizes the same data into a classic **Multi-Fact Star Schema**, with four dimension tables and four fact tables that share composite primary keys:
 
@@ -657,9 +606,9 @@ The DW is populated through a dedicated ETL pipeline ([`src/DW/etl.py`](src/DW/e
 
 ---
 
-# 9. Benchmark Methodology & Results
+# 8. Benchmark Methodology & Results
 
-## 9.1 Benchmark Setup
+## 8.1 Benchmark Setup
 
 All queries were benchmarked using the Python script [`benchmark.py`](benchmark.py), which wraps every query with PostgreSQL's `EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)` directive and parses the output to extract:
 
@@ -671,7 +620,7 @@ Each query was run **10 times** on both databases. The reported values are the a
 
 ---
 
-## 9.2 Empirical Benchmark Results
+## 8.2 Benchmark Results
 
 The raw results are stored in [`benchmark_results.csv`](benchmark_results.csv). Below are the benchmark results for all 11 queries, sorted by Query ID:
 
@@ -700,7 +649,7 @@ The performance difference is particularly noticeable in complex analytical quer
 
 ---
 
-# 10. Architectural Trade-offs & Discussion
+# 9. Architectural Trade-offs & Discussion
 
 | Aspect | Relational RDBMS | Data Warehouse (Star Schema) |
 |---|---|---|
@@ -712,7 +661,7 @@ The performance difference is particularly noticeable in complex analytical quer
 
 ---
 
-# 11. Conclusions
+# 10. Conclusions
 
 This benchmark confirms the theoretical foundations of Data Warehousing vs. Relational Database design:
 
