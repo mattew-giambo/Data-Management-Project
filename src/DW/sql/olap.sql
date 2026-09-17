@@ -81,7 +81,6 @@ GROUP BY CUBE(v.vehicleType, p.powertrain)
 ORDER BY v.vehicleType, p.powertrain;
 
 -- 6. Pandemic Impact
--- Since you created pandemicPeriod.
 
 SELECT
     y.pandemicPeriod,
@@ -146,11 +145,7 @@ GROUP BY GROUPING SETS (
 SELECT
     c.country,
     y.year,
-    ROUND(
-        100 * renewableElectricityGeneration /
-        electricityGeneration,
-        2
-    ) AS renewable_percentage
+    ROUND(100 * renewableElectricityGeneration / electricityGeneration, 2) AS renewable_percentage
 FROM CountryEnergy ce
 JOIN CountryDim c ON ce.keyC = c.keyC
 JOIN YearDim y ON ce.keyY = y.keyY
@@ -159,12 +154,11 @@ ORDER BY c.country, y.year;
 
 -- 11. Is EV Adoption Reducing CO2?
 -- This directly answers your project question.
--- This dataset is ideal for scatter plots, dashboards, or statistical analysis 
 -- to assess whether higher EV adoption combined with cleaner electricity generation corresponds to lower CO2 emissions.
 SELECT
     c.country,
     y.year,
-    SUM(em.evSalesShare) AS evSalesShare, -- Usa SUM() se le quote sono spezzate per categoria (es. BEV + PHEV), altrimenti AVG()
+    SUM(em.evSalesShare) AS evSalesShare,
     AVG(ce.renewableElectricityGeneration) AS renewableElectricityGeneration,
     AVG(cm.co2PerCapita) AS co2PerCapita
 FROM EVMarket em
