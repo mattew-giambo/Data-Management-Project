@@ -26,8 +26,7 @@ UNION ALL
 SELECT
     NULL AS continent,
     NULL AS year,
-    COALESCE(SUM(s.ev_sales), 0) AS total_ev_sales,
-    'grand_total' AS aggregation_level
+    COALESCE(SUM(s.ev_sales), 0) AS total_ev_sales
 FROM EVSales s
 
 ORDER BY continent, year;
