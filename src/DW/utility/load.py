@@ -7,7 +7,7 @@ def load_data(ev_wide, infra_clean, co2_clean, energy_clean):
     """
     print("=== Loading Cleaned Data ===")
     
-    base_path = Path(__file__).resolve().parents[2] 
+    base_path = Path(__file__).resolve().parents[3] 
     
     ev_path = base_path / "clean_datasets" / "clean_iea_ev_sales.csv"
     infra_path = base_path / "clean_datasets" / "clean_iea_ev_infrastructure.csv"

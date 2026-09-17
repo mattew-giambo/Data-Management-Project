@@ -8,7 +8,7 @@ def extract_data():
     """
     print("=== Extracting Raw Data ===")
     
-    base_path = Path(__file__).resolve().parents[2] 
+    base_path = Path(__file__).resolve().parents[3] 
     
     ev_path = base_path / "raw_datasets" / "iea-global-ev-sales.csv"
     co2_path = base_path / "raw_datasets" / "owid-co2-data.csv"
