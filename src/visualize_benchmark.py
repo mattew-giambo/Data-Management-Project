@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-RDBMS_COLOR  = "#4C72B0"   # blue
-DW_COLOR     = "#DD8452"   # orange
+RDBMS_COLOR = "#4C72B0" 
+DW_COLOR = "#DD8452"
 
 sns.set_theme(style="whitegrid", font_scale=1.1)
 plt.rcParams.update({
