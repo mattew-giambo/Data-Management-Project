@@ -1,31 +1,3 @@
-"""
-populate_relazionale.py
-=======================
-Standalone script that reads from the pre-cleaned CSVs in clean_datasets/
-and inserts all data into the GREEN_MOBILITY_RDBMS PostgreSQL database.
-
-Prerequisites
--------------
-1. PostgreSQL running on localhost:5432
-2. The schema has been initialised:
-       psql -U postgres -f src/RDBMS/schema_relazionale.sql
-3. The clean_datasets/ directory contains:
-       clean_iea_ev_sales.csv
-       clean_iea_ev_infrastructure.csv
-       clean_owid_co2.csv
-       clean_owid_energy.csv
-
-Usage
------
-    python src/RDBMS/populate_relazionale.py
-
-    # Override connection details:
-    python src/RDBMS/populate_relazionale.py \
-        --host localhost --port 5432 \
-        --dbname green_mobility_rdbms \
-        --user postgres --password postgres
-"""
-
 import argparse
 import sys
 from pathlib import Path
@@ -35,10 +7,7 @@ import pandas as pd
 import psycopg2
 import psycopg2.extras
 
-
-# ---------------------------------------------------------------------------
 # Helpers
-# ---------------------------------------------------------------------------
 
 def nan_to_none(value):
     """Convert NaN / Inf to None for PostgreSQL NULL compatibility."""
@@ -56,11 +25,6 @@ def get_connection(host, port, dbname, user, password):
     return psycopg2.connect(
         host=host, port=port, dbname=dbname, user=user, password=password
     )
-
-
-# ---------------------------------------------------------------------------
-# Lookup-table loaders  (return name -> id dicts)
-# ---------------------------------------------------------------------------
 
 def load_countries(cur, ev_df: pd.DataFrame, co2_df: pd.DataFrame) -> dict:
     """Insert distinct countries and return {iso_code: country_id}."""
@@ -164,9 +128,7 @@ def load_powertrains(cur, ev_df: pd.DataFrame) -> dict:
     return mapping
 
 
-# ---------------------------------------------------------------------------
 # Data table loaders
-# ---------------------------------------------------------------------------
 
 def load_ev_sales(cur, ev_df, iso_map, year_map, vt_map, pt_map):
     """Populate EVSales table."""
@@ -365,9 +327,7 @@ def read_clean_datasets(base_path: Path):
     return ev_df, infra_df, co2_df, energy_df
 
 
-# ---------------------------------------------------------------------------
 # Main
-# ---------------------------------------------------------------------------
 
 def run_populate(host, port, dbname, user, password):
     base_path = Path(__file__).resolve().parents[2]
